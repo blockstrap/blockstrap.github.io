@@ -265,6 +265,17 @@ QUOTE
 
 /*
 
+MISC
+
+*/
+p.intro {
+    display: block;
+    padding: 80px 0 0;
+    font-size: 22px;
+}
+
+/*
+
 FOOTER
 
 */
@@ -335,6 +346,7 @@ SOCIAL
 FONTS
 
 */
+p.intro,
 #quote,
 #features h3,
 .tagline {
