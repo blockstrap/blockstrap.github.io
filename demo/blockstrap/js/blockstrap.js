@@ -1,6 +1,6 @@
 /*
  * 
- *  Blockstrap v0.6.0.0
+ *  Blockstrap v0.6.0.1
  *  http://blockstrap.com
  *
  *  Designed, Developed and Maintained by Neuroware.io Inc
@@ -144,14 +144,41 @@ var blockstrap_core = function()
             },
             api: function(default_service)
             {
-                if(typeof default_service == 'undefined') default_service = 'blockstrap';
-                var api = default_service;
-                if(typeof $.fn.blockstrap.settings.api_service != 'undefined')
-                {
-                    api = $.fn.blockstrap.settings.api_service;
+                api = 'blockstrap';
+                if(typeof default_service != 'undefined') api = default_service;
+                if(
+                    typeof $.fn.blockstrap.api != 'undefined'
+                    && typeof $.fn.blockstrap.api.api_service != 'undefined'
+                ){
+                    api = $.fn.blockstrap.api.api_service;
                 }
-                api = $.fn.blockstrap.core.option('api_service', api);
+                if($.fn.blockstrap.core.option('api_service'))
+                {
+                    api = $.fn.blockstrap.core.option('api_service');
+                    if(
+                        typeof $.fn.blockstrap.api != 'undefined'
+                        && typeof $.fn.blockstrap.api.api_service != 'undefined'
+                    ){
+                        $.fn.blockstrap.api.api_service = api;
+                    }
+                }
                 return api;
+            },
+            apis: function(property, api_provider)
+            {
+                var result = false;
+                var api = $.fn.blockstrap.core.api();
+                if(typeof api_provider != 'undefined' && api_provider)
+                {
+                    api = api_provider;
+                }
+                if(
+                    typeof $.fn.blockstrap.settings.apis.defaults[api] != 'undefined'
+                    && typeof $.fn.blockstrap.settings.apis.defaults[api][property] != 'undefined'
+                ){
+                    result = $.fn.blockstrap.settings.apis.defaults[api][property];
+                }
+                return result;
             },
             apply_actions: function(hook, callback, options)
             {
@@ -577,6 +604,96 @@ var blockstrap_core = function()
                     {
                         $.fn.blockstrap.accounts.access(account_id, false, chain);
                     }
+                    else if(value === 'import')
+                    {
+                        var account = $.fn.blockstrap.accounts.get(account_id, false)[chain];
+                        var fee = $.fn.blockstrap.settings.blockchains[chain].fee;
+                        var options = {
+                            css: 'form-horizontal bs',
+                            objects: [
+                                {
+                                    id: 'import-key',
+                                    fields: [
+                                        {
+                                            inputs: {
+                                                id: 'private-key',
+                                                type: 'text',
+                                                label: {
+                                                    css: 'col-xs-3',
+                                                    text: 'Private Key'
+                                                },
+                                                wrapper: {
+                                                    css: 'col-xs-9'
+                                                },
+                                                placeholder: 'Private Key to Transfer Funds From'
+                                            }
+                                        },
+                                        {
+                                            inputs: {
+                                                id: 'to-address',
+                                                type: 'text',
+                                                label: {
+                                                    css: 'col-xs-3',
+                                                    text: 'Address'
+                                                },
+                                                wrapper: {
+                                                    css: 'col-xs-9'
+                                                },
+                                                value: account.address,
+                                                placeholder: 'Need to Send Funds Somewhere'
+                                            }
+                                        },
+                                        {
+                                            hiddens: {
+                                                id: 'chain',
+                                                value: chain
+                                            }
+                                        }
+                                    ]
+                                }
+                            ],
+                            data: [
+                                {
+                                    key: "autocomplete",
+                                    value: "off"
+                                },
+                                {
+                                    key: "data-function",
+                                    value: "import_key"
+                                }
+                            ],
+                            buttons: {
+                                forms: [
+                                    {
+                                        id: 'cancel-verification',
+                                        css: 'btn-danger pull-right btn-split',
+                                        text: 'Cancel',
+                                        type: 'button',
+                                        attributes: [
+                                            {
+                                                key: 'data-dismiss',
+                                                value: 'modal'
+                                            }
+                                        ]
+                                    },
+                                    {
+                                        type: "submit",
+                                        id: "submit-import-key",
+                                        css: 'btn-primary pull-right btn-split',
+                                        text: 'Transfer Funds'
+                                    }
+                                ]
+                            }
+                        };
+                        var form = $.fn.blockstrap.forms.process(options);
+                        var intro = '<p>Please note that since we do not store private keys anywhere we cannot actually import the keys. Instead, <strong>what this function really does</strong> is that it first checks the balance of the address belonging to the private key and then sends the balance (minus the network fee) to the address specified below.</p><p><strong>Again, please be warned</strong> that using this function will remove all of the available funds from the address belonging to the imported private key and transfer those funds to the specified address below:</p>';
+                        $.fn.blockstrap.core.modal('Import Private Key', intro + form);
+                    }
+                });
+                $($.fn.blockstrap.element).on('change', '#api_service', function(i)
+                {
+                    var value = $(this).val();
+                    $.fn.blockstrap.api.api_service = value;
                 });
                 $($.fn.blockstrap.element).find('.bs-blockchain-select').each(function(i)
                 {
@@ -640,7 +757,7 @@ var blockstrap_core = function()
                 $($.fn.blockstrap.element).find('.bs-account-select').each(function(i)
                 {
                     var select = $(this);
-                    var accounts = $.fn.blockstrap.accounts.get(false, true);
+                    var accounts = $.fn.blockstrap.accounts.get();
                     $(select).html('');
                     if($.isArray(accounts))
                     {
@@ -675,7 +792,7 @@ var blockstrap_core = function()
                         {
                             $(form).find('input#temp_un').remove();
                             $(form).find('input#temp_pw').remove();
-                        }, 1000);
+                        }, $.fn.blockstrap.core.timeouts('remove_temp_password'));
                     });
                     if($(this).find('[type="submit"]').length < 1)
                     {
@@ -803,6 +920,15 @@ var blockstrap_core = function()
                     }
                     bs.core.modal(title, contents);
                 });
+                // TODO - DEAL WITH THIS PROPERLY
+                if($('#blockstrap-login').length > 0)
+                {
+                    setTimeout(function()
+                    {
+                        $('#blockstrap-login #login-username').val('');
+                        $('#blockstrap-login #login-password').val('');
+                    }, $.fn.blockstrap.core.timeouts('clear_forms'));
+                }
             },
             get: function(file, extension, callback, skip, cached)
             {
@@ -827,7 +953,7 @@ var blockstrap_core = function()
                             url: file + '.' + extension,
                             dataType: extension,
                             cache: cached,
-                            async: true,
+                            async: false,
                             success: function(results)
                             {
                                 if(store === true)
@@ -910,30 +1036,13 @@ var blockstrap_core = function()
 
                                 bs.core.loader('close');
 
-                                if($(bs.element).length > 0)
+                                bs.core.apply_actions('init_callback', function()
                                 {
-                                    // SMOOTHER FADE-IN
-                                    $(bs.element).animate({'opacity':1}, 600, function()
+                                    $(window).resize(function(e)
                                     {
-                                        bs.core.apply_actions('init_callback', function()
-                                        {
-                                            $(window).resize(function(e)
-                                            {
-                                                bs.core.resize();
-                                            })
-                                        });
-                                    });
-                                }
-                                else
-                                {
-                                    bs.core.apply_actions('init_callback', function()
-                                    {
-                                        $(window).resize(function(e)
-                                        {
-                                            bs.core.resize();
-                                        })
-                                    });
-                                }   
+                                        bs.core.resize();
+                                    })
+                                });
                             }
 
                             // RESET IF REQUIRED
@@ -972,7 +1081,7 @@ var blockstrap_core = function()
                                             ||
                                             typeof bs.settings.account_poll == 'undefined'
                                         ){
-                                            bs.accounts.poll(0, function()
+                                            bs.accounts.poll(0, function(poll)
                                             {
                                                 setTimeout(function()
                                                 {
@@ -986,6 +1095,7 @@ var blockstrap_core = function()
                                         $.fn.blockstrap.core.refresh(function()
                                         {
                                             init_callback(window.location.hash.substring(1));
+                                            $('.bs.loading').removeClass('loading');
                                         }, $bs.slug(window.location.hash));
                                     }
                                     else
@@ -993,6 +1103,7 @@ var blockstrap_core = function()
                                         $.fn.blockstrap.core.refresh(function()
                                         {
                                             init_callback();
+                                            $('.bs.loading').removeClass('loading');
                                         }, bs.settings.page_base);
                                     }
                                     var run_tests = false;
@@ -1003,7 +1114,7 @@ var blockstrap_core = function()
                             } 
                         });
                     });
-                }, 3000);
+                }, $.fn.blockstrap.core.timeouts('delayed_init'));
             },
             less: function(callback)
             {
@@ -1077,47 +1188,39 @@ var blockstrap_core = function()
             },
             loader: function(state)
             {
+                $.fn.blockstrap.core.modals('close_all');
                 var element = $($.fn.blockstrap.element);
                 if(typeof $.fn.blockstrap.settings.loader_id != 'undefined')
                 {
                     element = $('#'+$.fn.blockstrap.settings.loader_id);
                 }
-                $.fn.blockstrap.core.modals('close_all');
                 if(state && state === 'open')
                 {
-                    $(element).animate({'opacity': 0}, 350, function()
-                    {
-                        $(element).addClass('loading');
-                        $(element).animate({'opacity': 1}, 150, function()
-                        {
-
-                        });
-                    });
-                }
-                else if(state && state === 'close')
-                {
-                    $(element).animate({'opacity': 0}, 350, function()
-                    {
-                        $(element).removeClass('loading');
-                        $(element).removeClass('installing');
-                        $(element).animate({'opacity': 1}, 150, function()
-                        {
-
-                        });
-                    });
+                    $(element).addClass('loading');
                 }
                 else
                 {
-                    if($(element).hasClass('loading'))
-                    {
-                        $(element).removeClass('loading');
-                    }
-                    else
-                    {
-                        $(element).addClass('loading');
-                    }
+                    $(element).removeClass('loading');
+                    $(element).removeClass('installing');
+                    $($.fn.blockstrap.element).attr('data-loading-content', 'LOADING');
                 }
                     
+            },
+            loading: function(text, add_loading_class)
+            {
+                if(typeof add_loading_class == 'undefined' || add_loading_class)
+                {
+                    add_loading_class = true;
+                }
+                else
+                {
+                    add_loading_class = false;
+                }
+                $($.fn.blockstrap.element).attr('data-loading-content', text);
+                if(add_loading_class)
+                {
+                    $($.fn.blockstrap.element).addClass('loading');
+                }
             },
             modal: function(title, content, id, callback)
             {
@@ -1134,7 +1237,10 @@ var blockstrap_core = function()
                 {
                     $(selector).find('input[type="password"]').val('');
                 });
-                $(selector).modal('show');
+                if($(selector).css('display') == 'none')
+                {
+                    $(selector).modal('show');
+                }
             },
             modals: function(action)
             {
@@ -1209,9 +1315,14 @@ var blockstrap_core = function()
                 var mnav = $($.fn.blockstrap.element).find('#' + $.fn.blockstrap.settings.mobile_nav_id);
                 $(nav).find('.active').removeClass('active');
                 $(mnav).find('.active').removeClass('active');
-                if(slug.charAt(0) != '#') slug = '#' + slug;
+                var original_slug = JSON.parse(JSON.stringify(slug));
+                if(slug.charAt(0) != '#') slug = '#' + $.fn.blockstrap.core.apply_filters('nav_slug', slug, slug);
                 $(nav).find(slug).addClass('active');
                 $(mnav).find(slug).addClass('active');
+                $.fn.blockstrap.core.apply_actions('core_nav_complete', function()
+                {
+                    
+                }, original_slug);
             },
             option: function(key, default_value)
             {
@@ -1226,7 +1337,7 @@ var blockstrap_core = function()
                 ){
                     default_value = options[key];
                 }
-                if(!default_value && typeof bs.settings[key] != 'undefined')
+                else if(!default_value && typeof bs.settings[key] != 'undefined')
                 {
                     default_value = bs.settings[key];
                 }   
@@ -1425,7 +1536,6 @@ var blockstrap_core = function()
             {
                 var bs = $.fn.blockstrap;
                 bs.core.modals('close_all');
-                bs.core.loader('open');
                 if(!slug) slug = bs.settings.page_base;
                 slug = bs.core.apply_filters('core_refresh_slug', slug, slug);
                 bs.templates.render(bs.settings.page_base, function()
@@ -1533,12 +1643,15 @@ var blockstrap_core = function()
                                         }
                                         $.fn.blockstrap.data.save('keys', store_key, safe_v, function()
                                         {
-
+                                            
                                         });
                                     }
                                 });
                             }
-                            salt = CryptoJS.SHA3(salt+k+blockstrap_functions.slug(v), { outputLength: 512 });
+                            salt = CryptoJS.SHA3(
+                                salt + k.toLowerCase() + blockstrap_functions.slug(v).toLowerCase(), 
+                                { outputLength: 512 }
+                            );
                             if(count >= key_count && callback)
                             {
                                 callback(salt.toString(), keys);
@@ -1710,8 +1823,6 @@ var blockstrap_core = function()
             },
             test_results: function(expected, given, index, total, title, api_service, chain_count, chain_total)
             {
-                var details = '';
-                var passed = true;
                 var bs = $.fn.blockstrap;
                 if(typeof full_results[api_service] == 'undefined')
                 {
@@ -1722,11 +1833,13 @@ var blockstrap_core = function()
                     full_results[api_service].addresses = false;
                     full_results[api_service].markets = false;
                     full_results[api_service].paginate = false;
+                    full_results[api_service].results = '';
                 }
                 if($.isPlainObject(expected) || $.isArray(expected))
                 {
                     var ex = expected;
                     var give = given;
+                    var provided_results = {};
                     if($.isPlainObject(expected))
                     {
                         expected = [];
@@ -1736,6 +1849,8 @@ var blockstrap_core = function()
                     }
                     $.each(expected, function(key, result)
                     {
+                        var details = '';
+                        var passed = true;
                         var expected_count = 0;
                         var expected_total = blockstrap_functions.array_length(result);
                         $.each(result, function(field, value)
@@ -1761,25 +1876,27 @@ var blockstrap_core = function()
                                 }
                             }
                         });
+                        if(passed === true && typeof provided_results[api_service] == 'undefined')
+                        {
+                            full_results[api_service].passed++;
+                            full_results[api_service].results+= '<hr />';
+                            full_results[api_service].results+= '<p class="break-word text-success left-aligned">';
+                            full_results[api_service].results+= '<strong class="black">API Request using '+$.fn.blockstrap.settings.apis.available[api_service]+':</strong><br />'+title;
+                            full_results[api_service].results+= ': <strong>PASSED</strong></p>';
+                            provided_results[api_service] = true;
+                        }
+                        else if(typeof provided_results[api_service] == 'undefined')
+                        {
+                            full_results[api_service].failed++;
+                            full_results[api_service].results+= '<hr />';
+                            full_results[api_service].results+= '<p class="break-word text-danger left-aligned">';
+                            full_results[api_service].results+= '<strong class="black">API Request using '+$.fn.blockstrap.settings.apis.available[api_service]+':</strong><br />'+title;
+                            full_results[api_service].results+= ': <strong>FAILED</strong>'+details+'</p>';
+                            provided_results[api_service] = true;
+                        }
                     });
-                    if(passed === true)
-                    {
-                        full_results[api_service].passed++;
-                        test_results+= '<hr />';
-                        test_results+= '<p class="break-word text-success left-aligned">';
-                        test_results+= '<strong class="black">API Request using '+api_service+':</strong><br />'+title;
-                        test_results+= ': <strong>PASSED</strong></p>';
-                    }
-                    else
-                    {
-                        full_results[api_service].failed++;
-                        test_results+= '<hr />';
-                        test_results+= '<p class="break-word text-danger left-aligned">';
-                        test_results+= '<strong class="black">API Request using '+api_service+':</strong><br />'+title;
-                        test_results+= ': <strong>FAILED</strong>'+details+'</p>';
-                    }
                     if(index >= total && chain_count >= chain_total)
-                    {   
+                    {
                         if($('#default-modal').find('.test-results').length < 1)
                         {
                             $.each(bs.settings.blockchains, function(blockchain, values)
@@ -1791,50 +1908,69 @@ var blockstrap_core = function()
                                         if(typeof full_results[provider] != 'undefined')
                                         {
                                             full_results[provider].blockchains++;
-                                            var api_addresses = $.fn.blockstrap.api.settings(
+                                            var relay = $.fn.blockstrap.api.settings(
                                                 blockchain, 
                                                 provider, 
                                                 'to', 
-                                                'addresses'
+                                                'relay'
                                             );
                                             if(
-                                                typeof api_addresses != 'undefined'
-                                                && api_addresses
+                                                typeof relay != 'undefined'
+                                                && relay
                                             ){
-                                                full_results[provider].addresses = true;
+                                                full_results[provider].relay = true;
                                             }
-                                            var api_markets = $.fn.blockstrap.api.settings(
-                                                'multi', 
-                                                provider, 
-                                                'to', 
-                                                'market'
-                                            );
-                                            if(
-                                                typeof api_markets != 'undefined'
-                                                && api_markets
-                                            ){
-                                                full_results[provider].markets = true;
-                                            }
-                                            var api_paginate = $.fn.blockstrap.api.settings(
+                                            var op_returns = $.fn.blockstrap.api.settings(
                                                 blockchain, 
                                                 provider, 
                                                 'to', 
-                                                'tx_pagination'
+                                                'op_returns'
                                             );
                                             if(
-                                                typeof api_paginate != 'undefined'
-                                                && api_paginate
+                                                typeof op_returns != 'undefined'
+                                                && op_returns
                                             ){
-                                                full_results[provider].paginate = true;
+                                                full_results[provider].op_returns = true;
+                                            }
+                                            var dnkeys = $.fn.blockstrap.api.settings(
+                                                blockchain, 
+                                                provider, 
+                                                'to', 
+                                                'dnkeys'
+                                            );
+                                            if(
+                                                typeof dnkeys != 'undefined'
+                                                && dnkeys
+                                            ){
+                                                full_results[provider].dnkeys = true;
                                             }
                                         }
                                     });
                                 }
                             });
-                            test_results = $.fn.blockstrap.core.test_results_table(full_results) + '<a href="#" class="btn-hidden_toggler btn btn-success btn-block" data-id="full-results">FULL RESULTS</a><div style="display: none" id="full-results">' + test_results + '</div>';
-                            $.fn.blockstrap.core.modal('Test Results', test_results);
                         }
-                        
+
+                        provided_results = {};
+                        test_result_content = $.fn.blockstrap.core.test_results_table(full_results) + '<a href="#" class="btn-hidden_toggler btn btn-success btn-block" data-id="full-results">FULL RESULTS</a><div style="display: none" id="full-results">';
+                        $.each(bs.settings.blockchains, function(blockchain, values)
+                        {
+                            if(blockchain != 'multi')
+                            {
+                                $.each(values.apis, function(provider, url)
+                                {
+                                    if(
+                                        typeof full_results[provider] != 'undefined'
+                                        && typeof provided_results[provider] == 'undefined'
+                                    ){
+                                        test_result_content+= full_results[provider].results;
+                                        provided_results[provider] = true;
+                                    }
+                                });
+                            }
+                        });
+                        test_result_content+= '</div>';
+                        $.fn.blockstrap.core.modal('Test Results', test_result_content);
+                        $('#blockstrap').removeClass('loading');
                     }
                 }
             },
@@ -1859,7 +1995,7 @@ var blockstrap_core = function()
                 {
                     results[v.provider] = v.results;
                 });
-                var headers = ['API Provider', 'Passed', 'Failed', 'Chains', 'Addresses', 'Markets', 'Paginate'];
+                var headers = ['Provider', 'Pass', 'Fail', 'Chains', 'TX Relay', 'OP Return', 'DN Key'];
                 html+= '<table class="table table-striped test-results">';
                     html+= '<thead>';
                         html+= '<tr>';
@@ -1873,7 +2009,7 @@ var blockstrap_core = function()
                         $.each(results, function(provider, these_results)
                         {
                             html+= '<tr>';
-                                html+= '<td><strong>'+provider+'</strong></td>';
+                                html+= '<td><strong>'+$.fn.blockstrap.settings.apis.available[provider]+'</strong></td>';
                                 if(these_results.failed > 0)
                                 {
                                     html+= '<td><span class="label label-success">'+these_results.passed+'</span></td>';
@@ -1886,7 +2022,7 @@ var blockstrap_core = function()
                                 }
                                 html+= '<td><strong>'+these_results.blockchains+'</strong></td>';
                                 html+= '<td>';
-                                    if(these_results.addresses === true)
+                                    if(these_results.relay === true)
                                     {
                                         html+= '<span class="label label-success">YES</span>';   
                                     }
@@ -1896,7 +2032,7 @@ var blockstrap_core = function()
                                     }
                                 html+= '</td>';
                                 html+= '<td>';
-                                    if(these_results.markets === true)
+                                    if(these_results.op_returns === true)
                                     {
                                         html+= '<span class="label label-success">YES</span>';   
                                     }
@@ -1906,7 +2042,7 @@ var blockstrap_core = function()
                                     }
                                 html+= '</td>';
                                 html+= '<td>';
-                                    if(these_results.paginate === true)
+                                    if(these_results.dnkeys === true)
                                     {
                                         html+= '<span class="label label-success">YES</span>';   
                                     }
@@ -1943,10 +2079,14 @@ var blockstrap_core = function()
                     && typeof bs.settings.blockchains.btc.apis != 'undefined'
                 ){
                     chain_total = blockstrap_functions.array_length(bs.settings.blockchains.btc.apis);
+                    for (i = 0; i < blockstrap_functions.array_length(bs.settings.blockchains.btc.apis); i++) 
+                    {
+                        var this_chain = bs.settings.blockchains.btc.apis[i];
+                    }
                     $.each(bs.settings.blockchains.btc.apis, function(api_service, api_url)
                     {
                         var this_count = 0;
-                        var test_count = '5';
+                        var test_count = 5; // TODO - REMOVE THIS "MANUAL" VARIABLE
                         chain_count++;
                         bs.api.address(set.address.request, 'btc', function(results)
                         {
@@ -2021,6 +2161,28 @@ var blockstrap_core = function()
                     });
                 }
             },
+            timeouts: function(type_or_value)
+            {
+                var required_value = parseInt(JSON.parse(JSON.stringify(type_or_value)));
+                var required_type = JSON.parse(JSON.stringify(type_or_value));
+                var default_value = 1000;
+                if(typeof $.fn.blockstrap.settings.timeouts != 'undefined')
+                {
+                    if(typeof $.fn.blockstrap.settings.timeouts[required_type] != 'undefined')
+                    {
+                        required_value = $.fn.blockstrap.settings.timeouts[required_type];
+                    }
+                    else if(typeof $.fn.blockstrap.settings.timeouts.default != 'undefined')
+                    {
+                        required_value = $.fn.blockstrap.settings.timeouts.default;
+                    }
+                }
+                if(required_value <= 0)
+                {
+                    required_value = default_value;
+                }
+                return required_value;
+            },
             txt: function(input, callback)
             {
                 if(input.files && input.files[0]) 
@@ -2041,7 +2203,7 @@ var blockstrap_core = function()
                 if(typeof saved_version == 'undefined') saved_version = 0;
                 if(typeof this_version == 'undefined') this_version = 1;
                 if(typeof refresh == 'undefined') refresh = false;
-                // TODO: Now need to implement patches!
+                // TODO: FUNCTIONALIZE THIS
                 if(/^[0-9\.]+$/.test(saved_version) && /^[0-9\.]+$/.test(this_version)) 
                 {
                     var current_version_array = this_version.split('.');
@@ -2423,7 +2585,7 @@ var blockstrap_core = function()
                     url: 'defaults.json',
                     dataType: 'json',
                     cache: false,
-                    async: true,
+                    async: false,
                     success: function(defaults)
                     {
                         // CONSTRUCT PLUGIN AFTER
@@ -2431,7 +2593,7 @@ var blockstrap_core = function()
                         blockstrap_functions.check(defaults, function(passed)
                         {
                             if(passed) plugin(false, false, defaults, store); 
-                            else alert('Your browser does not support the minimum requirements - please learn more at http://docs.blockstrap.com - either that or you may have private browsing activated, which would also prevent Blockstrap from working.');
+                            else alert('Your browser does not support the minimum requirements - please learn more at https://github.com/blockstrap/framework/tree/master/docs/en - either that or you may have private browsing activated, which would also prevent Blockstrap from working.');
                         });
                     }
                 }).fail(function(jqxhr, settings, exception)
@@ -2445,7 +2607,7 @@ var blockstrap_core = function()
                 blockstrap_functions.check(config, function(passed)
                 {
                     if(passed) plugin(false, false, config, store, skip); 
-                    else alert('Your browser does not support the minimum requirements - please learn more at http://docs.blockstrap.com - either that or you may have private browsing activated, which would also prevent Blockstrap from working.');
+                    else alert('Your browser does not support the minimum requirements - please learn more at https://github.com/blockstrap/framework/tree/master/docs/en - either that or you may have private browsing activated, which would also prevent Blockstrap from working.');
                 });
             }
         }

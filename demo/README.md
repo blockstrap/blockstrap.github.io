@@ -1,43 +1,81 @@
-## Blockstrap Framework
+## Blockstrap - The OpenSource HTML5 Blockchain Framework
 
-The Blockstrap Framework is a component of the Blockstrap Stack. It provides a front-end HTML5 interface for web-applications to communicate and manipulate blockchains and other dynamic data stores via external APIs. By default, it is configured to use the [Blockstrap API](../api/) but is API-neutral throughout. This allows you to host and manage your own API end-points or select from others configured at core, with examples included for the following services:
+The Blockstrap framework provides a front-end HTML5 interface for web-applications to communicate and manipulate blockchains using either external web-accessible APIs or self-hosted local QTs direct from the source.
 
-* [Blockchains.io](http://blockchains.io) (8 Chains)
-* [SoChain.io](http://chain.so) (6 Chains)
-* [Blockr.io](http://blockr.io) (4 Chains)
-* [HelloBlock.io](https://helloblock.io/) (BTC only)
+By default, it is configured to use the [BlockCypher API](http://blocksypher.com) but as well as being a blockchain-agnoistic framework, Blockstrap is also API-neutral throughout. This allows you to host and manage your own API end-points or select from others configured at core, with examples included and ready for use with the following services:
 
-However, please note that the default [wallet]() application included with [core]() allows you to choose which API to use, it does not provide different lists of supported blockchains based on the support of that API. By default, it shows support for six blockchains, but only two of the supported API services provide support for all six chains. Those blockchains supported by [Blockchains.io](http://blockchains.io) and [SoChain](http://chain.so) are:
+* [BlockCypher](http://blockcypher.com) (Supporting 3 Chains - __ready for public testing__)
+* [BlockTrail](http://blocktrail.com) (Supporting 2 Chains - __not completed yet__)
+* __LocalQTs__ (Tested on 4 Chains - __not completed yet__)
 
-* [Bitcoin](http://blockchains.io/btc/blocks/)
-* [DashPay](http://blockchains.io/dash/blocks/)
-* [Dogecoin](http://blockchains.io/doge/blocks/)
-* [Litecoin](http://blockchains.io/ltc/blocks/)
-* [Bitcoin Testnet](http://blockchains.io/btct/blocks/)
-* [Litecoin Testnet](http://blockchains.io/ltct/blocks/)
-* [DashPay Testnet](http://blockchains.io/dast/blocks/)
-* [Dogecoin Testnet](http://blockchains.io/dogt/blocks/)
+We will also be adding support for the following APIs before officially re-launching:
 
-The Framework has been developed with modularity and flexibility as the focal point of each technical decision. Currently providing a choice of 11 interchangable modules, features can be easily extended, included, replaced or removed depending on the need of each application.
+* [SoChain](http://chain.so) (Can Support 6 Chains?)
+* [BlockR](http://blockr.io) (Can Support 5 Chains?)
+* [Blockchain.info](http://blockchain.info) (Can ONLY Support 1 Chain?)
+* [Insight](http://insight.is) (Can Support 2 Chains?)
+* [Toshi](http://toshi.io) (Can Support 2 Chains?)
 
-These [modules](modules/) include:
+The framework itself is currently capable of supporting the following blockchains:
 
-* [Accounts](http://docs.blockstrap.com/en/framework/modules/accounts/)
-* [API](http://docs.blockstrap.com/en/framework/modules/api/)
-* [Blockchains](http://docs.blockstrap.com/en/framework/modules/blockchains/)
-* [Buttons](http://docs.blockstrap.com/en/framework/modules/buttons/)
-* [Contacts](http://docs.blockstrap.com/en/framework/modules/contacts/)
-* [Data](http://docs.blockstrap.com/en/framework/modules/data/)
-* [Filters](http://docs.blockstrap.com/en/framework/modules/filters/)
-* [Forms](http://docs.blockstrap.com/en/framework/modules/forms/)
-* [Security](http://docs.blockstrap.com/en/framework/modules/security/)
-* [Styles](http://docs.blockstrap.com/en/framework/modules/styles/)
-* [Templates](http://docs.blockstrap.com/en/framework/modules/templates/)
+* __Bitcoin__
+* __Dash__
+* __Dogecoin__
+* __Litecoin__
+* Bitcoin Testnet
+* Litecoin Testnet
+* Dash Testnet
+* Dogecoin Testnet
 
-When combined, they form our default deterministic wallet:
+The framework has been developed with modularity and flexibility as the focal point of each technical decision. 
 
-![Wallet Screen-Shot](https://raw.githubusercontent.com/blockstrap/docs/master/_libs/img/docs/applications/wallet/setup.jpg)
+This has enabled us to provide support for plugins and themes and allows developers to easily extend, modify and truly customize every aspect of the application. Included within the framework download as examples are the following themes:
 
-A live demo is available for viewing at - [http://demo.blockstrap.com/framework/v0.5/](http://demo.blockstrap.com/framework/v0.5/)
+* Default Wallet (as seen above)
+* Priorities (community-driven crowd-sourced to-do list)
+* BrainControl 2.0 (example of a heaviliy modified wallet)
 
-Please see our [documentation](http://docs.blockstrap.com) for more information and instructions on getting started.
+We've also bundled the following plugins:
+
+* Market Conditions
+* API Tests
+
+Everything is powered by one or more of the following interchangable [modules](docs/en/framework/modules/):
+
+* [Accounts](docs/en/framework/modules/accounts/)
+* [API](docs/en/framework/modules/api/)
+* [Blockchains](docs/en/framework/modules/blockchains/)
+* [Buttons](docs/en/framework/modules/buttons/)
+* [Contacts](docs/en/framework/modules/contacts/)
+* [Data](docs/en/framework/modules/data/)
+* [Filters](docs/en/framework/modules/filters/)
+* [Forms](docs/en/framework/modules/forms/)
+* [HTML](docs/en/framework/modules/html/)
+* [Multisig](docs/en/framework/modules/multisig/)
+* [Security](docs/en/framework/modules/security/)
+* [Styles](docs/en/framework/modules/styles/)
+* [Templates](docs/en/framework/modules/templates/)
+* [Widgets](docs/en/framework/modules/widgets/)
+
+When combined, they form our default deterministic wallet, which can be setup in seconds:
+
+![Wallet Screen-Shot](docs/img/setup.jpg)
+
+Once setup, users are provided with a fully-featured responsive experience that is available on any device - with support for accounts, contacts, message signing and much more. Come take a look at the live demo - [http://blockstrap.com/demo/](#)
+
+![Wallet Screen-Shot](docs/img/dashboard.jpg)
+
+__No private keys are ever stored or transmitted as they are only generated inline at the moment of transaction. Public information is stored within the device using HTML5 localStorage so is unavailable when browsing privately.__
+
+We suggest that you read our [documentation](docs/en/) for more information and instructions on how to get started.
+
+-----
+
+#### PLEASE NOTE THAT OUR DOCUMENTATION IS UNDERGOING REJUVINATION
+
+Specific topics of interest include:
+
+* [Blockstrap Applications](docs/en/applications)
+* [Blockstrap Framework](docs/en/framework)
+* [Blockstrap Plugins](docs/en/plugins)
+* [Supported Blockchains](docs/en/blockchains)

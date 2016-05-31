@@ -1,6 +1,6 @@
 /*
  * 
- *  Blockstrap v0.6.0.0
+ *  Blockstrap v0.6.0.1
  *  http://blockstrap.com
  *
  *  Designed, Developed and Maintained by Neuroware.io Inc
@@ -264,10 +264,10 @@
             var button = this;
             var all = $(button).attr('data-all');
             var app_salt = $(button).attr('data-salt');
-            var title = 'Error';
+            var title = 'Warning';
             var default_contents = 'You do not have any accouunts saved in localStorage yet.';
             var contents = default_contents;
-            var accounts = $.fn.blockstrap.accounts.get(false, true, true);
+            var accounts = $.fn.blockstrap.accounts.get();
             
             if(all && all == 'true') all = true;
             else all = false;
@@ -361,13 +361,14 @@
         var qr = $(button).attr('data-qr');
         var bip = $(button).attr('data-bip');
         var label = $(button).attr('data-label');
+        var html = $(button).attr('data-html');
         var amount = parseFloat($(button).attr('data-amount')).toFixed(8);
         var title = 'Error';
         var content = 'Missing required data attributes!';
-        if(qr == 'true') qr = true;
-        else qr = false;
-        if(bip == 'true') bip = true;
-        else bip = false;
+        if(qr == 'false') qr = false;
+        else qr = true;
+        if(bip == 'false') bip = false;
+        else bip = true;
         if(chain && address)
         {
             var blockchain = bs.settings.blockchains[chain].blockchain;
@@ -377,7 +378,7 @@
                 title = 'Send ' + amount + ' ' + blockchain + ' to ' + address;
             }
         }
-        if(qr || bip && chain && address)
+        if((qr || bip && (chain && address)) || (chain && address))
         {
             if(qr && bip)
             {
@@ -407,6 +408,11 @@
             {
                 var bip = 'And then?';
                 content = bip;
+            }
+            else
+            {
+                content = '';
+                if(html) content+= html;
             }
         }
         bs.core.modal(title, content);
@@ -464,6 +470,10 @@
                             if(typeof results.tx_count != 'undefined' && txs)
                             {
                                 $('.'+group+'-txs-'+address).text(results.tx_count);
+                            }
+                            if(typeof results.received != 'undefined' && txs)
+                            {
+                                $('.'+group+'-received-'+address).text(parseInt(results.received / 100000000).toFixed(8));
                             }
                         });
                     }
@@ -1053,7 +1063,7 @@
                                                         $.fn.blockstrap.core.modal(title, contents);
                                                     }
                                                 }, $.fn.blockstrap.core.api('blockstrap'), true);
-                                            }, 10000);
+                                            }, $.fn.blockstrap.core.timeouts('bs_widgets_request'));
                                         }
                                         else
                                         {

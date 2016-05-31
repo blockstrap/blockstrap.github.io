@@ -1,6 +1,6 @@
 /*
  * 
- *  Blockstrap v0.6.0.0
+ *  Blockstrap v0.6.0.1
  *  http://blockstrap.com
  *
  *  Designed, Developed and Maintained by Neuroware.io Inc
@@ -11,6 +11,17 @@
 (function($) 
 {
     var markets = {};
+    
+    $.fn.blockstrap.settings.exchange = {
+        usd: {
+            btc: 367.35,
+            ltc: 3.57,
+            doge: 0.00022388,
+            btct: 0,
+            ltct: 0,
+            doget: 0
+        }
+    };
     
     // THESE ARE DEFAULT CONDITIONS
     // IF API BEING USED DOES NOT SUPPORT MARKET API
@@ -154,9 +165,6 @@
                 if(typeof v.blockchain != 'undefined')
                 {
                     var rate = $.fn.blockstrap.settings.exchange.usd[k];
-
-                    // TODO: REPLACE
-                    if(k == 'doget') k = 'dogt';
                     if(
                         typeof market_info[k] != 'undefined'
                         && typeof market_info[k].fiat_usd_now != 'undefined'
@@ -216,7 +224,14 @@
                 }
                 else
                 {
-                    markets.update(saved_conditions.data, callback);
+                    if(typeof saved_conditions != 'undefined' && saved_conditions)
+                    {
+                        markets.update(saved_conditions.data, callback);
+                    }
+                    else
+                    {
+                        callback();
+                    }
                 }
             }, $.fn.blockstrap.core.api('blockstrap'), true);
         }

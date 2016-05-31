@@ -1,6 +1,6 @@
 /*
  * 
- *  Blockstrap v0.6.0.0
+ *  Blockstrap v0.6.0.1
  *  http://blockstrap.com
  *
  *  Designed, Developed and Maintained by Neuroware.io Inc
@@ -74,6 +74,10 @@
                                             {
                                                 value: 'access',
                                                 text: 'Access Private Key'
+                                            },
+                                            {
+                                                value: 'import',
+                                                text: 'Import Private Key'
                                             }
                                         ],
                                         attributes: [
@@ -309,7 +313,6 @@
                 });
             });
             
-            // TODO: Re-evaluate this?
             if(wallet.wallet_blockchain == 'hd')
             {
                 wallet.wallet_blockchain = [];
@@ -317,7 +320,11 @@
                 delete chains.multi;
                 $.each(chains, function(chain, obj)
                 {
-                    wallet.wallet_blockchain.push(chain);
+                    if(
+                        typeof $.fn.blockstrap.settings.blockchains[chain].apis[$.fn.blockstrap.core.api()] != 'undefined'
+                    ){
+                        wallet.wallet_blockchain.push(chain);
+                    }
                 });
             }
             
@@ -341,7 +348,10 @@
             $.fn.blockstrap.core.loader('close');
             if(!wallet.cancel)
             {
-                $.fn.blockstrap.core.modal('Error', 'Missing wallet requirements');
+                setTimeout(function()
+                {
+                    $.fn.blockstrap.core.modal('Error', 'Missing wallet requirements');
+                }, $.fn.blockstrap.core.timeouts('loader'));
                 return false;
             }
         }
@@ -455,19 +465,25 @@
                     {
                         $(button).removeClass('loading');
                         $.fn.blockstrap.core.loader('close');
-                        $.fn.blockstrap.core.modal('Error', 'No DNKeys associated with this ID.');
+                        setTimeout(function()
+                        {
+                            $.fn.blockstrap.core.modal('Error', 'No DNKeys associated with this ID.');
+                        }, $.fn.blockstrap.core.timeouts('loader'));
                         $(button).removeClass('loading');
                         return false;
                     }
                 }, 
-                $.fn.blockstrap.core.api('blockstrap')
+                $.fn.blockstrap.core.api()
             );
         }
         else
         {
             $(button).removeClass('loading');
             $.fn.blockstrap.core.loader('close');
-            $.fn.blockstrap.core.modal('Error', 'Missing contact requirements');
+            setTimeout(function()
+            {
+                $.fn.blockstrap.core.modal('Error', 'Missing contact requirements');
+            }, $.fn.blockstrap.core.timeouts('loader'));
             $(button).removeClass('loading');
             return false;
         }
@@ -679,11 +695,11 @@
         if($(button).attr('data-speed')) speed = parseInt($(button).attr('data-speed'));
         if(css)
         {
-            $('textarea.'+css).toggle(speed);
+            $('.'+css).toggle(speed);
         }
         else
         {
-            $('textarea#'+id).toggle(speed);
+            $('#'+id).toggle(speed);
         }
     }
     
@@ -808,8 +824,9 @@
         delete chains.multi;
         var chain_count = $bs.array_length(chains);
         var account_id = $(button).attr('data-id');
-        var account = bs.accounts.get(account_id, true);
+        var account = bs.accounts.get(account_id);
         var current_chain_count = $bs.array_length(account.blockchains);
+        var api_service = $.fn.blockstrap.core.api();
         var default_address = false;
         var default_chain = false;
         var title = 'Warning';
@@ -825,7 +842,7 @@
             {
                 $.each(account.blockchains, function(this_chain, this_obj)
                 {
-                    if(this_chain == chain) 
+                    if(this_chain == chain)
                     {
                         delete chains[chain];
                     }
@@ -842,11 +859,19 @@
             });
             $.each(chains, function(chain, obj)
             {
-                chains_available.push({
-                    value: chain,
-                    text: obj.blockchain
-                });
+                if(typeof $.fn.blockstrap.settings.blockchains[chain].apis[api_service] != 'undefined')
+                {
+                    chains_available.push({
+                        value: chain,
+                        text: obj.blockchain
+                    });
+                }
             });
+            if(blockstrap_functions.array_length(chains_available) === 1)
+            {
+                chains_available[0].value = '';
+                chains_available[0].text = 'Already Have All Available Chains';
+            }
             var fields = [
                 {
                     selects: {
@@ -871,8 +896,7 @@
                     var key_array = v.split('_');
                     var this_key = key_array[1];
                     var value = account[this_key];
-                    // TODO: HARD-CODED FIX THAT SHOULD BE DEALT WITH BY PATCH?
-                    if(this_key == 'blockchain' || this_key == 'currency')
+                    if(this_key == 'blockchain')
                     {
                         value = account.code;
                         type = 'hidden';
@@ -993,11 +1017,12 @@
         if($('#menu-toggle').hasClass('open') || $('#sidebar-toggle').hasClass('open')) menu = true;
         if(slugs[0] === "" && href)
         {
-            slug = slugs[1];   
+            slug = slugs[1];
+            var templating_slug = $.fn.blockstrap.core.apply_filters('buttons_page_slug', slugs[1], slugs[1]);
+            $.fn.blockstrap.core.nav(slugs[1]);
             $(button).addClass('loading');
-            $.fn.blockstrap.core.nav(slug);
-            var data_url = 'themes/'+bs.settings.theme+'/'+bs.settings.data_base+slug;
-            var html_url = 'themes/'+bs.settings.theme+'/'+bs.settings.html_base+slug;
+            var data_url = bs.settings.theme_base+bs.settings.theme+'/'+bs.settings.data_base+templating_slug;
+            var html_url = bs.settings.theme_base+bs.settings.theme+'/'+bs.settings.html_base+templating_slug;
             if(mobile && !menu) $(elements).css({'opacity':0});
             if(menu)
             {
@@ -1060,7 +1085,7 @@
         $.fn.blockstrap.core.print(contents);
     }
     
-    buttons.process = function(slug, content, filtered_data, button, effect, direction, reverse_direction, mobile, menu, elements)
+    buttons.process = function(slug, content, filtered_data, button, effect, direction, reverse, mobile, menu, elements)
     {
         $("html, body").animate({ scrollTop: 0 }, 350);
         if(direction == 'up' || menu === true) $.fn.blockstrap.core.loader('close');
@@ -1097,7 +1122,7 @@
         $('#'+$.fn.blockstrap.settings.content_id).hide(effect, {direction:direction}, 500, function()
         {
             var paged_html = $.fn.blockstrap.templates.filter(Mustache.render(content, filtered_data));
-            $('#'+$.fn.blockstrap.settings.content_id).html(paged_html).show(effect, {direction:reverse_direction}, 500, function()
+            $('#'+$.fn.blockstrap.settings.content_id).html(paged_html).show(effect, {direction:reverse}, 500, function()
             {
                 if(mobile && !menu) $(elements).css({'opacity':1});
                 if(menu)
@@ -1110,7 +1135,7 @@
             var mnav = $($.fn.blockstrap.element).find('#' + $.fn.blockstrap.settings.mobile_nav_id);
             $(nav).find('.loading').removeClass('loading');
             $(mnav).find('.loading').removeClass('loading');
-
+            $(button).addClass('active');
             $($.fn.blockstrap.element).find('.activated').removeClass('activated');
             $.fn.blockstrap.core.ready();
         });
@@ -1125,7 +1150,7 @@
         if(collection == 'accounts')
         {
             $.fn.blockstrap.core.loader('open');
-            var account = $.fn.blockstrap.accounts.get(key, true);
+            var account = $.fn.blockstrap.accounts.get(key);
             $.fn.blockstrap.accounts.update(account, function()
             {
                 $.fn.blockstrap.core.refresh(function()
@@ -1235,15 +1260,25 @@
                     var pw = CryptoJS.SHA3($('#confirm-modal').find('input#password').val(), { outputLength: 512 }).toString();
                     $(bs.element).on('hidden.bs.modal', '#confirm-modal', function()
                     {
+                        bs.core.loader('close');
                         if(confirmed && pw == password)
                         {
                             bs.core.reset(true);
-                            location.reload();
+                            bs.core.refresh(function()
+                            {
+                                
+                            }, bs.core.page());
                         }
-                        else
+                        else if(password)
                         {
-                            bs.core.loader('close');
-                            bs.core.modal('Warning', 'The provided password does not match your user device password.');
+                            setTimeout(function()
+                            {
+                                var check_again = $.parseJSON(localStorage.getItem('nw_keys_your_password'));
+                                if(check_again)
+                                {
+                                    bs.core.modal('Warning', 'The provided password does not match your user device password.');
+                                }
+                            }, $.fn.blockstrap.core.timeouts('loader'));
                         }
                     });
                     bs.core.modals('close_all');
@@ -1282,7 +1317,7 @@
         e.preventDefault();
         var bs = $.fn.blockstrap;
         var id = $(button).attr('data-id');
-        var account = bs.accounts.get(id, true);
+        var account = bs.accounts.get(id);
         var title = 'Warning';
         var contents = 'You do not have any inactive addresses';
         if(
@@ -1332,17 +1367,20 @@
         var from_chain = $(form).find('#from_account_chain').val();
         var chain = $(form).find('#from option:selected').attr('data-chain');
         var amount = parseFloat($(form).find('#amount').val()) * 100000000;
+        var selected_fee = $(form).find('#fee').val();
         if(from_chain && !chain) 
         {
             chain = from_chain;
             standard = false;
         }
+        if(selected_fee) selected_fee = parseInt(parseFloat(selected_fee).toFixed(8) * 100000000);
+        else selected_fee = parseInt(parseFloat($.fn.blockstrap.settings.blockchains[chain].fee).toFixed(8) * 100000000);
         if(!to) $.fn.blockstrap.core.modal('Warning', 'Missing address to send payment to');
         else if(!from) $.fn.blockstrap.core.modal('Warning', 'Missing account to use to send from');
         else if(!amount) $.fn.blockstrap.core.modal('Warning', 'You have not provided the amount you want to send');
         else
         {
-            $.fn.blockstrap.accounts.prepare(to, from, amount, chain, standard);
+            $.fn.blockstrap.accounts.prepare(to, from, amount, chain, standard, selected_fee);
         }
     }
     
@@ -1496,7 +1534,6 @@
                 });
             });
             
-            // TODO: Re-evaluate this?
             if(wallet.wallet_blockchain == 'hd')
             {
                 wallet.wallet_blockchain = [];
@@ -1504,10 +1541,18 @@
                 delete chains.multi;
                 $.each(chains, function(chain, obj)
                 {
-                    wallet.wallet_blockchain.push(chain);
+                    if(
+                        typeof $.fn.blockstrap.settings.blockchains[chain].apis[$.fn.blockstrap.core.api()] != 'undefined'
+                    ){
+                        wallet.wallet_blockchain.push(chain);
+                    }
                 });
             }
             
+            if(typeof options.api_service != 'undefined')
+            {
+                $.fn.blockstrap.api.api_service = options.api_service
+            }
             if(
                 wallet 
                 && wallet.wallet_blockchain
@@ -1516,6 +1561,7 @@
                 && !wallet.cancel
             )
             {
+                $.fn.blockstrap.core.loading('CREATING ACCOUNT');
                 bs.accounts.new(
                     wallet.wallet_blockchain, 
                     wallet.wallet_name,
@@ -1549,6 +1595,7 @@
                             $("html, body").animate({ scrollTop: 0 }, 350, function()
                             {
                                 bs.core.loader('close');
+                                $('.bs.loading').removeClass('loading');
                             });
                         }, true);
                     }
@@ -1600,10 +1647,8 @@
                                             var paged = bs.templates.filter(page);
                                             $(bs.element).html('');
                                             $(bs.element).append(paged);
-                                            $(bs.element).addClass('loading');
-                                            $(bs.element).find('#blockstrap-loader').css({'opacity': 1, 'z-index': 9999999});
                                             bs.core.ready();
-                                            $.fn.blockstrap.core.loader('close');
+                                            $('.bs.loading').removeClass('loading');
                                         });
                                     });
                                 }
@@ -1624,323 +1669,15 @@
                     {
                         contents+= '<p>'+error+'</p>';
                     });
-                    bs.core.modal(title, contents);
+                    setTimeout(function()
+                    {
+                        $.fn.blockstrap.core.modal(title, contents);
+                    }, $.fn.blockstrap.core.timeouts('loader'));
                 }
             }
         }
     }
     
-    buttons.submit_import = function(button, e)
-    {
-        e.preventDefault();
-        var bs = $.fn.blockstrap;
-        var $bs = blockstrap_functions;
-        var value = $(bs.element).find('form#import-device-data #import-data').val();
-        var error_title = 'Error Importing';
-        var error_content = 'Unable to import the data.';
-        if($bs.json(value))
-        {
-            var accounts = false;
-            var bs_bits = false;
-            var contacts = false;
-            var keys = false;
-            value = $.parseJSON(value);
-            if($.isArray(value.nw_accounts)) accounts = value.nw_accounts;
-            if($.isPlainObject(value.nw_blockstrap)) bs_bits = value.nw_blockstrap;
-            if($.isArray(value.nw_contacts)) contacts = value.nw_contacts;
-            if($.isPlainObject(value.nw_keys)) keys = value.nw_keys;
-            var account_len = $bs.array_length(accounts);
-            var bs_bits_len = $bs.array_length(bs_bits);
-            var contacts_len = $bs.array_length(contacts);
-            var keys_len = $bs.array_length(keys);
-            var total_len = account_len + bs_bits_len + contacts_len + keys_len;
-            if(keys != false && bs_bits != false)
-            {
-                if($.isArray(accounts))
-                {
-                    $.each(accounts, function(k, v)
-                    {
-                        localStorage.setItem('nw_accounts_' + v.id, JSON.stringify(v));
-                    });
-                }
-                if($.isPlainObject(bs_bits))
-                {
-                    $.each(bs_bits, function(k, v)
-                    {
-                        localStorage.setItem('nw_blockstrap_' + k, JSON.stringify(v));
-                    });
-                }
-                if($.isArray(contacts))
-                {
-                    $.each(contacts, function(k, v)
-                    {
-                        localStorage.setItem('nw_contacts_' + v.id, JSON.stringify(v));
-                    });
-                }
-                if($.isPlainObject(keys))
-                {
-                    $.each(keys, function(k, v)
-                    {
-                        localStorage.setItem('nw_keys_' + k, JSON.stringify(v));
-                    });
-                }
-                location.reload();
-            }
-            else
-            {
-                error_content+= ' Missing vital Blockstrap attributes.';
-                $.fn.blockstrap.core.modal(error_title, error_content);
-            }
-        }
-        else
-        {
-            error_content+= ' This is not even valid JSON data.';
-            $.fn.blockstrap.core.modal(error_title, error_content);
-        }
-    }
-    
-    buttons.submit_payment = function(button, e)
-    {
-        e.preventDefault();
-        var fields = [];
-        var account = false;
-        var op_return_data = false;
-        var form_id = $(button).attr('data-form-id');
-        var standard = $(button).attr('data-standard');
-        var from = $(button).attr('data-from');
-        var from_address = $(button).attr('data-from');
-        var account_id = $(button).attr('data-account-id');
-        var chain = $(button).attr('data-chain');
-        var blockchain = $(button).attr('data-to-blockchain');
-        var to_address = $(button).attr('data-to-address');
-        var to_amount = parseInt($(button).attr('data-to-amount'));
-        var form = $('form#'+form_id);
-        var raw_accounts = $.fn.blockstrap.accounts.get(account_id, true);
-        if(standard == 'false') standard = false;
-        else standard = true;
-        if(
-            typeof raw_accounts.blockchains != 'undefined'
-            && typeof raw_accounts.blockchains[chain] != 'undefined'
-        ){
-            account = raw_accounts.blockchains[chain];
-        }
-        var balance = account.balance;
-        var fee = $.fn.blockstrap.settings.blockchains[blockchain].fee * 100000000;
-        var from_address = account.address;
-        var change = balance - (to_amount + fee);
-        var current_tx_count = account.tx_count;
-        if(balance < to_amount + fee && standard)
-        {
-            $.fn.blockstrap.core.modal('Warning', 'You do not have sufficient funds');
-        }
-        else
-        {
-            if(!standard && from)
-            {
-                from_address = from;
-            }
-            $.fn.blockstrap.core.loader('open');
-            $.fn.blockstrap.data.find('blockstrap', 'salt', function(salt)
-            {
-                $(form).find('.form-group').each(function(i)
-                {
-                    var input = $(this).find('input');
-                    var value = $(input).val();
-                    var id = $(input).attr('id');
-                    if(!$(input).hasClass('ignore'))
-                    {
-                        var use_op_return = false;
-                        var blockchain_settings = $.fn.blockstrap.settings.blockchains;
-                        if(
-                            typeof blockchain_settings[blockchain] != 'undefined'
-                            && blockchain_settings[blockchain].op_return === true
-                        ){
-                            use_op_return = true;
-                        }
-                        if(id != 'msg')
-                        {
-                            fields.push({
-                                id: id,
-                                value: value
-                            });
-                        }
-                        else if(use_op_return === true)
-                        {
-                            var op_limit = 0;
-                            if(
-                                typeof blockchain_settings[blockchain] != 'undefined'
-                                && typeof blockchain_settings[blockchain].op_limit != 'undefined'
-                            ){
-                                op_limit = blockchain_settings[blockchain].op_limit;
-                            }
-                            var m = encodeURIComponent(value).match(/%[89ABab]/g);
-                            var value_len = value.length + (m ? m.length : 0);
-                            if(value_len < (op_limit - 1))
-                            {
-                                op_return_data = value;
-                            }
-                            else
-                            {
-                                op_return_data = null;
-                            }
-                        }
-                        else if(value)
-                        {
-                            op_return_data = null;
-                        }
-                    }
-                });
-                $.fn.blockstrap.accounts.verify(account, fields, function(verified, keys)
-                {
-                    if(verified === true && op_return_data != null)
-                    {
-                        $.fn.blockstrap.blockchains.send(to_address, to_amount, from_address, keys, function(tx)
-                        {
-                            var saved_account = $.fn.blockstrap.accounts.get(account_id, true);
-                            if(tx && typeof tx.txid != 'undefined')
-                            {
-                                setTimeout(function()
-                                {
-                                    $.fn.blockstrap.accounts.update(saved_account, function()
-                                    {
-                                        $.fn.blockstrap.core.refresh(function()
-                                        {
-                                            $.fn.blockstrap.core.modals('close_all');
-                                            $.fn.blockstrap.core.loader('close');
-                                            var title = 'Sent ' + parseInt(to_amount) / 100000000 + ' ' + saved_account.blockchains[chain].type + ' to ' + to_address;
-                                            var base = $.fn.blockstrap.settings.base_url;
-                                            var content = '<p>Transaction ID: ' + tx.txid + '</p><p>You can <a href="' + base + '?txid=' + tx.txid + '#transaction">verify</a> your transaction using our internal explorer, or via a third-party service such as <a href="https://blockchains.io/' + blockchain + '/transaction/' + tx.txid + '">this</a>.</p>';
-                                            content+='<p>Please note that a '+(fee / 100000000)+' '+$.fn.blockstrap.settings.blockchains[blockchain].blockchain+' mining fee was also added to the transaction.</p>';
-                                            $.fn.blockstrap.core.modal(title, content);
-                                        }, $.fn.blockstrap.core.page());
-                                    });
-                                }, 6000);
-                            }
-                            else
-                            {
-                                var title = 'Warning';
-                                var content = 'Unable to relay transaction.';
-                                $.fn.blockstrap.core.modal(title, content);
-                                $.fn.blockstrap.core.loader('close');
-                            }
-                        }, blockchain, op_return_data);
-                    }
-                    else
-                    {
-                        if(op_return_data == null)
-                        {
-                            var title = 'Warning';
-                            var content = 'Message too long!';
-                            $.fn.blockstrap.core.modal(title, content);
-                            $.fn.blockstrap.core.loader('close');
-                        }
-                        if(!verified)
-                        {
-                            var title = 'Warning';
-                            var contents = 'Unable to verify ownership';
-                            $.fn.blockstrap.core.modal(title, contents);
-                            $.fn.blockstrap.core.loader('close');
-                        }
-                    }
-                }, false, chain, raw_accounts.type, from_address);
-            });
-        }
-    } 
-    
-    buttons.submit_verification = function(button, e)
-    {
-        e.preventDefault();
-        var account = false;
-        var fields = [];
-        var form_id = $(button).attr('data-form-id');
-        var account_id = $(button).attr('data-account-id');
-        var standard = $(button).attr('data-standard');
-        var from_address = $(button).attr('data-from');
-        var chain = $(button).attr('data-chain');
-        var form = $('form#'+form_id);
-        var raw_accounts = $.fn.blockstrap.accounts.get(account_id, true);
-        var account_chains = JSON.parse(JSON.stringify(raw_accounts.blockchains));
-        if(
-            typeof raw_accounts.blockchains != 'undefined'
-            && typeof raw_accounts.blockchains[chain] != 'undefined'
-        ){
-            account = raw_accounts.blockchains[chain];
-        }
-        else if(
-            chain == 'all'
-            && typeof raw_accounts.blockchains != 'undefined'
-        ){
-            $.each(account_chains, function(chain, blockchain)
-            {
-                if(chain != 'multi') account = account_chains[chain];
-            });
-        }
-        $.fn.blockstrap.data.find('blockstrap', 'salt', function(salt)
-        {
-            $(form).find('.form-group').each(function(i)
-            {
-                var input = $(this).find('input');
-                var value = $(input).val();
-                var id = $(input).attr('id');
-                if(!$(input).hasClass('ignore'))
-                {
-                    fields.push({
-                        id: id,
-                        value: value
-                    });
-                }
-            });
-            $.fn.blockstrap.accounts.verify(account, fields, function(verified, keys, raw, seed)
-            {
-                var private_key = keys.priv;
-                var address = keys.pub;
-                var title = 'Private Key for '+address;
-                if(verified === true && chain == 'all' && seed)
-                {
-                    title = 'Master Seed used for '+account.name;
-                    contents = '<p><strong>The master seed for this account:</strong></p>';
-                    contents+= '<pre><code>'+seed+'</code></pre>';
-                    contents+= '<p>All of the private keys that are only ever generated inline for this account at the moment they are needed use the following master-seed and are <a href="https://github.com/bitcoin/bips/blob/master/bip-0032.mediawiki" target="_blank">BIP32</a> compliant. However, please note that we add the blockchain shortcode to the end of the seed for each blockchain, as follows:</p>';
-                    $.each(account_chains, function(chain, blockchain)
-                    {
-                        var these_keys = $.fn.blockstrap.blockchains.keys(seed+chain, chain, 1, false, true);
-                        var this_public_key = these_keys.pub;
-                        var this_private_key = these_keys.priv;
-                        var extended_private_key = these_keys.raw.toString();
-                        var public_keys = these_keys.raw.neutered();
-                        var extended_public_key = public_keys.toString();
-                        contents+= '<hr><span class="alert alert-info alert-block"><strong>' + $.fn.blockstrap.settings.blockchains[chain].blockchain + '</strong></span><pre><code><small>var '+chain+'_keys = bitcoinjslib.HDNode.fromSeedBuffer('+seed+chain+', bitcoinjslib.networks[' + $.fn.blockstrap.settings.blockchains[chain].lib + '])</small></code></pre><span class="alert alert-success alert-block"><pre><code><strong>Public Key</strong>:<br />' + this_public_key + '<br /><br /><strong>Private Key</strong>:<br />' + this_private_key + '</code></pre></span><span class="alert alert-warning alert-block"><pre><code><strong>Extended Public Key</strong>:<br />'+ extended_public_key +'<br /><br /><strong>Extended Private Key</strong>:<br />'+ extended_private_key +'</code></pre></span>';
-                    });
-                    contents+= '<hr><span class="alert alert-danger alert-block">Please note that if you use the <strong>switch address</strong> functionality available by clicking the recycle icon button from the actions column on the accounts table we then use the BIP32 HD <strong>dervived</strong> method to generate new addresses based upon the number of old addresses stored within the account. This can be (as is done manually) by the wallet when using the switch functionality, but can also be done externally by third-parties using the <strong>extended keys</strong> listed above</span>';
-                    $.fn.blockstrap.core.modal(title, contents);
-                }
-                else if(verified === true)
-                {
-                    var intro = '<span class="alert alert-info alert-block">'+private_key+'<br /><span class="small">(QR code below)</span></span>';
-                    var qr_code = '<p class="qr-holder" data-content="'+private_key+'"></p>';
-                    var print = '<p style="text-align: center"><a href="#" class="btn btn-danger btn-print" data-print-id="default-modal" data-print-class="modal-body" data-print-title="Private Key for '+address+'">PRINT THIS KEY</a></p>';
-                    $.fn.blockstrap.core.modal(title, intro + qr_code + print);
-                    $('#default-modal').find('.qr-holder').each(function()
-                    {
-                        if($(this).find('img').length > 0)
-                        {
-                            $(this).find('img').remove();   
-                        }
-                        $(this).qrcode({
-                            render: 'image',
-                            text: $(this).attr('data-content')
-                        });
-                    });
-                }
-                else
-                {
-                    var title = 'Warning';
-                    var contents = 'Unable to verify ownership';
-                    $.fn.blockstrap.core.modal(title, contents);
-                }
-            }, false, chain, raw_accounts.type, from_address, true);
-        });
-    }
     
     buttons.sign = function(button, e)
     {
@@ -1948,7 +1685,7 @@
         var account_id = $(button).attr('data-key');
         var chain = $(button).attr('data-chain');
         var blockchain = $.fn.blockstrap.settings.blockchains[chain].blockchain;
-        var account = $.fn.blockstrap.accounts.get(account_id, true);
+        var account = $.fn.blockstrap.accounts.get(account_id);
         var fields = [];
         if($.isArray(account.keys))
         {
@@ -1959,8 +1696,7 @@
                 var key_array = v.split('_');
                 var this_key = key_array[1];
                 var value = account[this_key];
-                // TODO: HARD-CODED FIX THAT SHOULD BE DEALT WITH BY PATCH?
-                if(this_key == 'blockchain' || this_key == 'currency')
+                if(this_key == 'blockchain')
                 {
                     value = account.code;
                     type = 'hidden';
@@ -2049,13 +1785,354 @@
         $.fn.blockstrap.core.modal('Sign Message with '+blockchain, contents + form);
     }
     
+    buttons.submit_import = function(button, e)
+    {
+        e.preventDefault();
+        var bs = $.fn.blockstrap;
+        var $bs = blockstrap_functions;
+        var value = $(bs.element).find('form#import-device-data #import-data').val();
+        var error_title = 'Error Importing';
+        var error_content = 'Unable to import the data.';
+        if($bs.json(value))
+        {
+            var accounts = false;
+            var bs_bits = false;
+            var contacts = false;
+            var keys = false;
+            value = $.parseJSON(value);
+            if($.isArray(value.nw_accounts)) accounts = value.nw_accounts;
+            if($.isPlainObject(value.nw_blockstrap)) bs_bits = value.nw_blockstrap;
+            if($.isArray(value.nw_contacts)) contacts = value.nw_contacts;
+            if($.isPlainObject(value.nw_keys)) keys = value.nw_keys;
+            var account_len = $bs.array_length(accounts);
+            var bs_bits_len = $bs.array_length(bs_bits);
+            var contacts_len = $bs.array_length(contacts);
+            var keys_len = $bs.array_length(keys);
+            var total_len = account_len + bs_bits_len + contacts_len + keys_len;
+            if(keys != false && bs_bits != false)
+            {
+                if($.isArray(accounts))
+                {
+                    $.each(accounts, function(k, v)
+                    {
+                        localStorage.setItem('nw_accounts_' + v.id, JSON.stringify(v));
+                    });
+                }
+                if($.isPlainObject(bs_bits))
+                {
+                    $.each(bs_bits, function(k, v)
+                    {
+                        localStorage.setItem('nw_blockstrap_' + k, JSON.stringify(v));
+                    });
+                }
+                if($.isArray(contacts))
+                {
+                    $.each(contacts, function(k, v)
+                    {
+                        localStorage.setItem('nw_contacts_' + v.id, JSON.stringify(v));
+                    });
+                }
+                if($.isPlainObject(keys))
+                {
+                    $.each(keys, function(k, v)
+                    {
+                        localStorage.setItem('nw_keys_' + k, JSON.stringify(v));
+                    });
+                }
+                location.reload();
+            }
+            else
+            {
+                error_content+= ' Missing vital Blockstrap attributes.';
+                $.fn.blockstrap.core.modal(error_title, error_content);
+            }
+        }
+        else
+        {
+            error_content+= ' This is not even valid JSON data.';
+            $.fn.blockstrap.core.modal(error_title, error_content);
+        }
+    }
+    
+    buttons.submit_payment = function(button, e)
+    {
+        e.preventDefault();
+        var fields = [];
+        var account = false;
+        var op_return_data = false;
+        var form_id = $(button).attr('data-form-id');
+        var standard = $(button).attr('data-standard');
+        var from = $(button).attr('data-from');
+        var from_address = $(button).attr('data-from');
+        var account_id = $(button).attr('data-account-id');
+        var chain = $(button).attr('data-chain');
+        var blockchain = $(button).attr('data-to-blockchain');
+        var to_address = $(button).attr('data-to-address');
+        var to_amount = parseInt($(button).attr('data-to-amount'));
+        var selected_fee = parseInt($(button).attr('data-tx-fee'));
+        var form = $('form#'+form_id);
+        var raw_accounts = $.fn.blockstrap.accounts.get(account_id);
+        if(standard == 'false') standard = false;
+        else standard = true;
+        if(
+            typeof raw_accounts.blockchains != 'undefined'
+            && typeof raw_accounts.blockchains[chain] != 'undefined'
+        ){
+            account = raw_accounts.blockchains[chain];
+        }
+        var balance = account.balance;
+        var fee = $.fn.blockstrap.settings.blockchains[blockchain].fee * 100000000;
+        if(selected_fee) fee = selected_fee;
+        var from_address = account.address;
+        var change = balance - (to_amount + fee);
+        var current_tx_count = account.tx_count;
+        if(balance < to_amount + fee && standard)
+        {
+            $.fn.blockstrap.core.modal('Warning', 'You do not have sufficient funds');
+        }
+        else
+        {
+            if(!standard && from)
+            {
+                from_address = from;
+            }
+            $.fn.blockstrap.core.loader('open');
+            $.fn.blockstrap.data.find('blockstrap', 'salt', function(salt)
+            {
+                $(form).find('.form-group').each(function(i)
+                {
+                    var input = $(this).find('input');
+                    var value = $(input).val();
+                    var id = $(input).attr('id');
+                    if(!$(input).hasClass('ignore'))
+                    {
+                        var use_op_return = false;
+                        var blockchain_settings = $.fn.blockstrap.settings.blockchains;
+                        if(
+                            typeof blockchain_settings[blockchain] != 'undefined'
+                            && blockchain_settings[blockchain].op_return === true
+                        ){
+                            use_op_return = true;
+                        }
+                        if(id != 'msg')
+                        {
+                            fields.push({
+                                id: id,
+                                value: value
+                            });
+                        }
+                        else if(use_op_return === true)
+                        {
+                            var op_limit = 0;
+                            if(
+                                typeof blockchain_settings[blockchain] != 'undefined'
+                                && typeof blockchain_settings[blockchain].op_limit != 'undefined'
+                            ){
+                                op_limit = blockchain_settings[blockchain].op_limit;
+                            }
+                            var m = encodeURIComponent(value).match(/%[89ABab]/g);
+                            var value_len = value.length + (m ? m.length : 0);
+                            if(value_len < (op_limit - 1))
+                            {
+                                op_return_data = value;
+                            }
+                            else
+                            {
+                                op_return_data = null;
+                            }
+                        }
+                        else if(value)
+                        {
+                            op_return_data = null;
+                        }
+                    }
+                });
+                $.fn.blockstrap.accounts.verify(account, fields, function(verified, keys)
+                {
+                    if(verified === true && op_return_data != null)
+                    {
+                        $.fn.blockstrap.blockchains.send(to_address, to_amount, from_address, keys, function(tx)
+                        {
+                            var saved_account = $.fn.blockstrap.accounts.get(account_id);
+                            if(tx && typeof tx.txid != 'undefined')
+                            {
+                                setTimeout(function()
+                                {
+                                    var total_spent = to_amount + fee;
+                                    var new_balance = saved_account.blockchains[blockchain].balance - total_spent;
+                                    var new_balance_display = parseFloat(new_balance / 100000000).toFixed(8);
+                                    var new_tx_count = saved_account.blockchains[blockchain].tx_count + 1;
+                                    $.fn.blockstrap.accounts.update(saved_account, function()
+                                    {
+                                        saved_account.blockchains[blockchain].balance = new_balance;
+                                        saved_account.blockchains[blockchain].display_balance = new_balance_display;
+                                        saved_account.blockchains[blockchain].tx_count = new_tx_count;
+                                        $.fn.blockstrap.data.save(
+                                            'accounts', 
+                                            saved_account.id, 
+                                            saved_account, 
+                                            function(updated_account)
+                                            {
+                                                $.fn.blockstrap.core.refresh(function()
+                                                {
+                                                    $.fn.blockstrap.core.modals('close_all');
+                                                    $.fn.blockstrap.core.loader('close');
+                                                    var title = 'Sent ' + parseInt(to_amount) / 100000000 + ' ' + saved_account.blockchains[chain].type + ' to ' + to_address;
+                                                    var base = $.fn.blockstrap.settings.base_url;
+                                                    var contents = '<p>Transaction ID: ' + tx.txid + '</p><p>You can <a href="' + base + '?txid=' + tx.txid + '#transaction">verify</a> your transaction using our internal explorer, or via a third-party service such as <a href="https://blockchains.io/' + blockchain + '/transaction/' + tx.txid + '">this</a>.</p>';
+                                                    contents+='<p>Please note that a '+(fee / 100000000)+' '+$.fn.blockstrap.settings.blockchains[blockchain].blockchain+' mining fee was also added to the transaction.</p>';
+                                                    setTimeout(function()
+                                                    {
+                                                        $.fn.blockstrap.core.modal(title, contents);
+                                                    }, $.fn.blockstrap.core.timeouts('loader'));
+                                                }, $.fn.blockstrap.core.page());
+                                            }
+                                        );
+                                    });
+                                }, $.fn.blockstrap.core.timeouts('bs_buttons_submit_payment'));
+                            }
+                            else
+                            {
+                                var title = 'Warning';
+                                var content = 'Unable to relay transaction.';
+                                $.fn.blockstrap.core.loader('close');
+                                setTimeout(function()
+                                {
+                                    $.fn.blockstrap.core.modal(title, contents);
+                                }, $.fn.blockstrap.core.timeouts('loader'));
+                            }
+                        }, blockchain, op_return_data, fee);
+                    }
+                    else
+                    {
+                        if(op_return_data == null)
+                        {
+                            var title = 'Warning';
+                            var content = 'Message too long!';
+                            $.fn.blockstrap.core.loader('close');
+                            setTimeout(function()
+                            {
+                                $.fn.blockstrap.core.modal(title, contents);
+                            }, $.fn.blockstrap.core.timeouts('loader'));
+                        }
+                        if(!verified)
+                        {
+                            var title = 'Warning';
+                            var contents = 'Unable to verify ownership';
+                            $.fn.blockstrap.core.loader('close');
+                            setTimeout(function()
+                            {
+                                $.fn.blockstrap.core.modal(title, contents);
+                            }, $.fn.blockstrap.core.timeouts('loader'));
+                        }
+                    }
+                }, false, from_address);
+            });
+        }
+    } 
+    
+    buttons.submit_verification = function(button, e)
+    {
+        e.preventDefault();
+        var account = false;
+        var fields = [];
+        var form_id = $(button).attr('data-form-id');
+        var account_id = $(button).attr('data-account-id');
+        var standard = $(button).attr('data-standard');
+        var from_address = $(button).attr('data-from');
+        var chain = $(button).attr('data-chain');
+        var form = $('form#'+form_id);
+        var raw_accounts = $.fn.blockstrap.accounts.get(account_id);
+        var account_chains = JSON.parse(JSON.stringify(raw_accounts.blockchains));
+        if(
+            typeof raw_accounts.blockchains != 'undefined'
+            && typeof raw_accounts.blockchains[chain] != 'undefined'
+        ){
+            account = raw_accounts.blockchains[chain];
+        }
+        else if(
+            chain == 'all'
+            && typeof raw_accounts.blockchains != 'undefined'
+        ){
+            $.each(account_chains, function(chain, blockchain)
+            {
+                if(chain != 'multi') account = account_chains[chain];
+            });
+        }
+        $.fn.blockstrap.data.find('blockstrap', 'salt', function(salt)
+        {
+            $(form).find('.form-group').each(function(i)
+            {
+                var input = $(this).find('input');
+                var value = $(input).val();
+                var id = $(input).attr('id');
+                if(!$(input).hasClass('ignore'))
+                {
+                    fields.push({
+                        id: id,
+                        value: value
+                    });
+                }
+            });
+            $.fn.blockstrap.accounts.verify(account, fields, function(verified, keys, raw, seed)
+            {
+                var private_key = keys.priv;
+                var address = keys.pub;
+                var title = 'Private Key for '+address;
+                if(verified === true && chain == 'all' && seed)
+                {
+                    title = 'Master Seed used for '+account.name;
+                    contents = '<p><strong>The master seed for this account:</strong></p>';
+                    contents+= '<pre><code>'+seed+'</code></pre>';
+                    contents+= '<p>All of the private keys that are only ever generated inline for this account at the moment they are needed use the following master-seed and are <a href="https://github.com/bitcoin/bips/blob/master/bip-0032.mediawiki" target="_blank">BIP32</a> compliant. However, please note that we add the blockchain shortcode to the end of the seed for each blockchain, as follows:</p>';
+                    $.each(account_chains, function(chain, blockchain)
+                    {
+                        var these_keys = $.fn.blockstrap.blockchains.keys(seed+chain, chain, 1, false, true);
+                        var this_public_key = these_keys.pub;
+                        var this_private_key = these_keys.priv;
+                        var extended_private_key = these_keys.raw.toString();
+                        var public_keys = these_keys.raw.neutered();
+                        var extended_public_key = public_keys.toString();
+                        contents+= '<hr><span class="alert alert-info alert-block"><strong>' + $.fn.blockstrap.settings.blockchains[chain].blockchain + '</strong></span><pre><code><small>var '+chain+'_keys = bitcoinjslib.HDNode.fromSeedBuffer('+seed+chain+', bitcoinjslib.networks[' + $.fn.blockstrap.settings.blockchains[chain].lib + '])</small></code></pre><span class="alert alert-success alert-block"><pre><code><strong>Public Key</strong>:<br />' + this_public_key + '<br /><br /><strong>Private Key</strong>:<br />' + this_private_key + '</code></pre></span><span class="alert alert-warning alert-block"><pre><code><strong>Extended Public Key</strong>:<br />'+ extended_public_key +'<br /><br /><strong>Extended Private Key</strong>:<br />'+ extended_private_key +'</code></pre></span>';
+                    });
+                    contents+= '<hr><span class="alert alert-danger alert-block">Please note that if you use the <strong>switch address</strong> functionality available by clicking the recycle icon button from the actions column on the accounts table we then use the BIP32 HD <strong>dervived</strong> method to generate new addresses based upon the number of old addresses stored within the account. This can be (as is done manually) by the wallet when using the switch functionality, but can also be done externally by third-parties using the <strong>extended keys</strong> listed above</span>';
+                    $.fn.blockstrap.core.modal(title, contents);
+                }
+                else if(verified === true)
+                {
+                    var intro = '<span class="alert alert-info alert-block">'+private_key+'<br /><span class="small">(QR code below)</span></span>';
+                    var qr_code = '<p class="qr-holder" data-content="'+private_key+'"></p>';
+                    var print = '<p style="text-align: center"><a href="#" class="btn btn-danger btn-print" data-print-id="default-modal" data-print-class="modal-body" data-print-title="Private Key for '+address+'">PRINT THIS KEY</a></p>';
+                    $.fn.blockstrap.core.modal(title, intro + qr_code + print);
+                    $('#default-modal').find('.qr-holder').each(function()
+                    {
+                        if($(this).find('img').length > 0)
+                        {
+                            $(this).find('img').remove();   
+                        }
+                        $(this).qrcode({
+                            render: 'image',
+                            text: $(this).attr('data-content')
+                        });
+                    });
+                }
+                else
+                {
+                    var title = 'Warning';
+                    var contents = 'Unable to verify ownership';
+                    $.fn.blockstrap.core.modal(title, contents);
+                }
+            }, false, from_address, true);
+        });
+    }
+    
     buttons.switch = function(button, e)
     {
         e.preventDefault();
         var account_id = $(button).attr('data-key');
         var chain = $(button).attr('data-chain');
         var blockchain = $.fn.blockstrap.settings.blockchains[chain].blockchain;
-        var account = $.fn.blockstrap.accounts.get(account_id, true);
+        var account = $.fn.blockstrap.accounts.get(account_id);
         var fields = [];
         if($.isArray(account.keys))
         {

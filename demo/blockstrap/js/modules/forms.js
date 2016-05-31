@@ -1,6 +1,6 @@
 /*
  * 
- *  Blockstrap v0.6.0.0
+ *  Blockstrap v0.6.0.1
  *  http://blockstrap.com
  *
  *  Designed, Developed and Maintained by Neuroware.io Inc
@@ -25,9 +25,10 @@
             var default_address = vars.defaultAddress;
             var default_chain = vars.defaultChain;
             var new_chain = $(form).find('select#blockchain').val();
-            var raw_accounts = $.fn.blockstrap.accounts.get(account_id, true);
+            var raw_accounts = $.fn.blockstrap.accounts.get(account_id);
             var current_chains = raw_accounts.blockchains;
             var available_chains = JSON.parse(JSON.stringify($.fn.blockstrap.settings.blockchains));
+            $.fn.blockstrap.core.modals('close_all');
             delete available_chains.multi;
             if(
                 typeof raw_accounts.blockchains != 'undefined'
@@ -47,13 +48,18 @@
                 });
                 $.each(available_chains, function(chain, obj)
                 {
-                    new_chains.push(chain);
+                    if(
+                        typeof $.fn.blockstrap.settings.blockchains[chain].apis[$.fn.blockstrap.core.api()] != 'undefined'
+                    ){
+                        new_chains.push(chain);
+                    }
                 });
             }
             else
             {
                 new_chains.push(new_chain);
             }
+            $.fn.blockstrap.core.modals('close_all');
             $.fn.blockstrap.core.loader('open');
             $.fn.blockstrap.data.find('blockstrap', 'salt', function(salt)
             {
@@ -77,11 +83,17 @@
                         var address = keys.pub;
                         if(address == default_address)
                         {
+                            var fields_to_use = {};
+                            $.each(fields, function(i)
+                            {
+                                var field = fields[i];
+                                fields_to_use[field.id] = field.value;
+                            });
                             $.fn.blockstrap.accounts.new(
                                 new_chains, 
                                 account.name, 
-                                account.password, 
-                                keys, 
+                                fields_to_use.wallet_password, 
+                                fields_to_use, 
                                 function()
                                 {
                                     $.fn.blockstrap.core.refresh(function()
@@ -95,13 +107,19 @@
                         else
                         {
                             $.fn.blockstrap.core.loader('close');
-                            $.fn.blockstrap.core.modal(title, contents);
+                            setTimeout(function()
+                            {
+                                $.fn.blockstrap.core.modal(title, contents);
+                            }, $.fn.blockstrap.core.timeouts('loader'));
                         }
                     }
                     else
                     {
                         $.fn.blockstrap.core.loader('close');
-                        $.fn.blockstrap.core.modal(title, contents);
+                        setTimeout(function()
+                        {
+                            $.fn.blockstrap.core.modal(title, contents);
+                        }, $.fn.blockstrap.core.timeouts('loader'));
                     }
                 })
             })
@@ -151,7 +169,10 @@
                     $.fn.blockstrap.core.refresh(function()
                     {
                         $.fn.blockstrap.core.loader('close');
-                        $.fn.blockstrap.core.modal('Success', 'Contact Updated');
+                        setTimeout(function()
+                        {
+                            $.fn.blockstrap.core.modal('Success', 'Contact Updated');
+                        }, $.fn.blockstrap.core.timeouts('loader'));
                     }, $.fn.blockstrap.core.page());
                 });
             }
@@ -167,6 +188,43 @@
         else
         {
             return false;
+        }
+    }
+    
+    forms.import_key = function(form, vars)
+    {
+        var private_key = $(form).find('#private-key').val();
+        var to_address = $(form).find('#to-address').val();
+        var chain = $(form).find('#chain').val();
+        var title = 'Warning';
+        var contents = 'Missing required fields';
+        if(private_key && to_address && chain)
+        {
+            $.fn.blockstrap.core.loading('IMPORTING KEY', false);
+            $.fn.blockstrap.core.loader('open');
+            $.fn.blockstrap.blockchains.empty(private_key, to_address, chain, function(results)
+            {
+                $.fn.blockstrap.core.loading('LOADING', false);
+                $.fn.blockstrap.core.loader('close');
+                setTimeout(function()
+                {
+                    if(typeof results.success != 'undefined' && results.success)
+                    {
+                        title = 'Successful Import';
+                        contents = 'Successfully imported funds to ' + to_address;
+                        $.fn.blockstrap.core.modal(title, contents);
+                    }
+                    else
+                    {
+                        title = 'Error';
+                        contents = 'Unable to import funds';
+                    }
+               }, $.fn.blockstrap.core.timeouts('loader'));
+            });
+        }
+        else
+        {
+            $.fn.blockstrap.core.modal(title, contents);
         }
     }
     
@@ -266,7 +324,7 @@
             var account_id = vars.accountId;
             var chain = vars.chain;
             var message = $(form).find('#message').val();
-            var account = $.fn.blockstrap.accounts.get(account_id, true);
+            var account = $.fn.blockstrap.accounts.get(account_id);
             var this_account = account.blockchains[chain];
             var blockchain_key = $.fn.blockstrap.blockchains.key(chain);
             var blockchain_obj = bitcoin.networks[blockchain_key];
@@ -309,7 +367,7 @@
             var account_id = vars.accountId;
             var chain = vars.chain;
             var transfer = $(form).find('#transfer-funds').val();
-            var the_account = $.fn.blockstrap.accounts.get(account_id, true);
+            var the_account = $.fn.blockstrap.accounts.get(account_id);
             var account = JSON.parse(JSON.stringify(the_account));
             // THIS IS FOR FORM TO PROCESS AFTER GETTING KEY ...?
             if(typeof account.addresses == 'undefined')
@@ -352,13 +410,8 @@
                     $.fn.blockstrap.data.find('blockstrap', 'salt', function(salt)
                     {
                         var key = '';
-                        var original = false;
                         if($.isArray(fields))
                         {
-                            if(typeof account.original != 'undefined')
-                            {
-                                original = account.original;
-                            }
                             $.each(fields, function(k, v)
                             {
                                 if(v.id == 'wallet_blockchain' && type == 'hd')
@@ -371,13 +424,10 @@
                                         v.value.push(chain);
                                     });
                                 }
-
-                                // TODO: Remove this hardcoded hack?
-                                if(v.id == 'wallet_currency' && original)
-                                {
-                                    v.value = original;
-                                }
-                                key_obj = CryptoJS.SHA3(salt+key+v.id+v.value, { outputLength: 512 });
+                                key_obj = CryptoJS.SHA3(
+                                    salt + key.toLowerCase() + v.id.toLowerCase() + blockstrap_functions.slug(v.value).toLowerCase(), 
+                                    { outputLength: 512 }
+                                );
                                 key = key_obj.toString();
                             });
                         };
@@ -493,14 +543,17 @@
                                                                         account.code
                                                                     );
                                                                 });
-                                                            }, 5000);
+                                                            }, $.fn.blockstrap.core.timeouts('bs_forms_switch_address'));
                                                         }
                                                         else
                                                         {
                                                             var title = 'Error';
                                                             var contents = 'Unable to relay raw transaction';
                                                             $.fn.blockstrap.core.loader('close');
-                                                            $.fn.blockstrap.core.modal(title, contents);
+                                                            setTimeout(function()
+                                                            {
+                                                                $.fn.blockstrap.core.modal(title, contents);
+                                                            }, $.fn.blockstrap.core.timeouts('loader'));
                                                         }
                                                     });
                                                 }
@@ -536,7 +589,10 @@
                                 var title = 'Warning';
                                 var contents = 'Unable to re-verify ownership';
                                 $.fn.blockstrap.core.loader('close');
-                                $.fn.blockstrap.core.modal(title, contents);
+                                setTimeout(function()
+                                {
+                                    $.fn.blockstrap.core.modal(title, contents);
+                                }, $.fn.blockstrap.core.timeouts('loader'));
                             }
                         }
                     })
@@ -546,7 +602,10 @@
                     var title = 'Warning';
                     var contents = 'Unable to verify ownership';
                     $.fn.blockstrap.core.loader('close');
-                    $.fn.blockstrap.core.modal(title, contents);
+                    setTimeout(function()
+                    {
+                        $.fn.blockstrap.core.modal(title, contents);
+                    }, $.fn.blockstrap.core.timeouts('loader'));
                 }
             });
         }
@@ -564,7 +623,14 @@
         {
             var blockchain_key = $.fn.blockstrap.blockchains.key(chain);
             var blockchain_obj = bitcoin.networks[blockchain_key];
-            var verification = bitcoin.Message.verify(address, signature, message, blockchain_obj);
+            var verification = false;
+            try{
+                verification = bitcoin.Message.verify(address, signature, message, blockchain_obj);
+            }
+            catch(error)
+            {
+                
+            }
             if(verification === true)
             {
                 title = 'Success';
