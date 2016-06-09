@@ -12,6 +12,7 @@
 {
     var widgets = {};   
     var polls = {};
+    var bs_widget_init = false;
 
     widgets.accounts = function()
     {
@@ -110,7 +111,8 @@
                                     {
                                         type: 'password',
                                         id: 'password',
-                                        placeholder: 'Enter your password here'
+                                        placeholder: 'Enter your password here',
+                                        value: ''
                                     },
                                     {
                                         type: 'hidden',
@@ -237,8 +239,7 @@
                             if(typeof results.txid != 'undefined' && results.txid)
                             {
                                 title = 'Success';
-                                var url = 'http://api.blockstrap.com/v0/'+chain+'/transaction/id/'+results.txid;
-                                contents = 'Your <a href="'+url+'">transaction</a> has been relayed.';
+                                contents = 'Your transaction has been relayed.';
                                 $.fn.blockstrap.core.modal(title, contents);
                             }
                             else
@@ -258,7 +259,7 @@
                 $.fn.blockstrap.core.modal(title, contents);
             }
         });
-        $('body').on('click', '.bs-accounts-modal', function(e)
+        $('body').on('click', '.bs-accounts_modal', function(e)
         {
             e.preventDefault();
             var button = this;
@@ -267,7 +268,9 @@
             var title = 'Warning';
             var default_contents = 'You do not have any accouunts saved in localStorage yet.';
             var contents = default_contents;
-            var accounts = $.fn.blockstrap.accounts.get();
+            var accounts = $.fn.blockstrap.accounts.get(false, false, true);
+            
+            $(button).addClass('loading');
             
             if(all && all == 'true') all = true;
             else all = false;
@@ -285,18 +288,20 @@
                         }
                         $.each(account.blockchains, function(chain, obj)
                         {
-                            var blockchain = $.fn.blockstrap.settings.blockchains[chain].blockchain;
-                            var key_button = '<a href="#" class="btn btn-primary bs-account-key btn-xs" data-name="'+obj.name+'" data-address="'+obj.address+'" data-chain="'+chain+'" data-salt="'+app_salt+'">Keys</a>';
-                            var send_button = '<a href="#" class="btn btn-success bs-account-send btn-xs" data-name="'+obj.name+'" data-address="'+obj.address+'" data-chain="'+chain+'" data-salt="'+app_salt+'">Send</a>';
-                            var remove_button = '<a href="#" class="btn btn-danger bs-account-remove btn-xs" data-id="'+blockstrap_functions.slug(obj.name)+'">Remove</a>';
-                            var buttons = key_button + ' ' + send_button + ' ' + remove_button;
-                            contents+= '<div id="wrapper-'+blockstrap_functions.slug(obj.name)+'">';
-                            contents+= '<p><hr><strong>'+obj.name+'</strong> ('+blockchain+')<br /><br />'+buttons+'</p>';
-                            contents+= '<p class="small"><strong>Address</strong>: '+obj.address+'</p>';
-                            contents+= '<p><strong>TXs</strong>: <span class="bs-txs">'+obj.tx_count+'</span> | <strong>Balance</strong>: <span class="bs-balance">'+parseFloat(obj.balance / 100000000).toFixed(8)+'</span></p>';
-                            contents+= '</div>';
-                            widgets.update('accounts', account, function()
+                            widgets.update('accounts', account, function(x)
                             {
+                                obj = $.fn.blockstrap.accounts.get(account.id, true, true)[chain];
+                                var blockchain = $.fn.blockstrap.settings.blockchains[chain].blockchain;
+                                var key_button = '<a href="#" class="btn btn-primary bs-account-key btn-xs" data-name="'+obj.name+'" data-address="'+obj.address+'" data-chain="'+chain+'" data-salt="'+app_salt+'">Keys</a>';
+                                var qr_button = '<a href="#" class="btn btn-success bs-qr btn-xs" data-content="'+obj.address+'">QR</a>';
+                                var send_button = '<a href="#" class="btn btn-warning bs-account-send btn-xs" data-name="'+obj.name+'" data-address="'+obj.address+'" data-chain="'+chain+'" data-salt="'+app_salt+'">Send</a>';
+                                var remove_button = '<a href="#" class="btn btn-danger bs-account-remove btn-xs" data-id="'+blockstrap_functions.slug(obj.name)+'">Remove</a>';
+                                var buttons = key_button + ' ' + qr_button + ' ' + send_button + ' ' + remove_button;
+                                contents+= '<div id="wrapper-'+blockstrap_functions.slug(obj.name)+'">';
+                                contents+= '<p><hr><strong>'+obj.name+'</strong> ('+blockchain+')<br /><br />'+buttons+'</p>';
+                                contents+= '<p class="small"><strong>Address</strong>: '+obj.address+'</p>';
+                                contents+= '<p><strong>TXs</strong>: <span class="bs-txs">'+obj.tx_count+'</span> | <strong>Balance</strong>: <span class="bs-balance">'+parseFloat(obj.balance / 100000000).toFixed(8)+'</span> | <strong>Total Received</strong>: <span class="bs-received">'+parseFloat(obj.received / 100000000).toFixed(8)+'</span></p>';
+                                contents+= '</div>';
                                 widgets.poll(60, 'acc_' + blockstrap_functions.slug(obj.name), function()
                                 {
                                     widgets.update('accounts', account, false, 0, chain);
@@ -306,7 +311,10 @@
                     }
                 });
             }
-            $.fn.blockstrap.core.modal(title, contents);
+            $.fn.blockstrap.core.modal(title, contents, 'default-modal', function()
+            {
+                $(button).removeClass('loading');
+            });
         });
     }
     
@@ -546,20 +554,20 @@
                 var input = this;
                 var id = $(input).attr('id');
                 var value = $(input).val();
-                if(id == 'your_password_repeat')
+                if(id == 'your_password_repeat' || id == 'fake_password_field' || id == 'fake_username_field')
                 {
                     
                 }
                 else
                 {
-                    keys[id] = value;
+                    keys[id] = value
                 }
             });
             $.fn.blockstrap.core.salt(keys, function(salt, keys)
             {
                 $.fn.blockstrap.data.save('blockstrap', 'salt', salt, function()
                 {
-                    window.location.reload();
+                    $.fn.blockstrap.core.modals('close_all');
                 });
             }, $.fn.blockstrap.settings.id);
         });
@@ -645,7 +653,7 @@
                 if(typeof account.name != 'undefined')
                 {
                     title = 'Successfully Saved to LocalStorage';
-                    contents = '<p>We have saved '+account.name+' to localStorage, you will need the <strong>final_seed</strong> in order to re-use this account elsewhere. The final seed is:</p><pre><code>'+final_seed+'</code></pre><p><span class="alert alert-danger alert-block">LOSS OF THIS SEED COULD RESULT IN LOSS OF CONTROL</span></p>';
+                    contents = '<p>We have saved '+account.name+' to localStorage,</p><p>You will need the <strong>final_seed</strong> in order to re-use this account elsewhere. The final seed is:</p><pre><code>'+final_seed+'</code></pre><p><span class="alert alert-danger alert-block">LOSS OF THIS SEED COULD RESULT IN LOSS OF CONTROL</span></p>';
                 }
                 $.fn.blockstrap.core.modal(title, contents);
             });
@@ -790,7 +798,7 @@
             }
             if(typeof options.chain != 'undefined') chain = options.chain;
             if(typeof options.salt != 'undefined') app_salt = options.salt;
-            return '<form class="bs-new-account form-horizontal" data-chain="'+chain+'" data-salt="'+app_salt+'" data-callback="'+callback+'" data-print="'+print+'" data-save="'+save+'" data-more="'+more+'" data-check="'+check+'"><div class="form-group"><label for="name" class="control-label col-sm-3">Account Name</label><div class="col-sm-9"><input type="text" class="form-control" name="name" id="name" placeholder="This name gets used as part of the hashing process..." autocomplete="off" /></div></div><div class="form-group"><label class="control-label col-sm-3" for="salt">Your Unique Salt</label><div class="col-sm-9"><input type="text" class="form-control" placeholder="Type Salt or Click to Generate New" value="'+salt+'" name="salt" id="salt" autocomplete="off" />'+salt_button+'</div></div><div class="form-group"><label class="control-label col-sm-3" for="pass">Password</label><div class="col-sm-9"><input type="password" class="form-control" name="pass" id="pass" placeholder="Add a password for extra hashing strength!" autocomplete="off" /></div></div><div class="form-group"><label class="control-label col-sm-3">&nbsp;</label><div class="col-sm-9"><input type="password" class="form-control" placeholder="Repeat your password to be sure you typed it correctly..." name="password" id="password" autocomplte="off" /></div></div><div class="form-group"><button type="submit" class="btn btn-primary pull-right">Submit</button></div></form>';
+            return '<form class="bs-new-account form-horizontal" data-chain="'+chain+'" data-salt="'+app_salt+'" data-callback="'+callback+'" data-print="'+print+'" data-save="'+save+'" data-more="'+more+'" data-check="'+check+'"><!-- HACK FOR IE/FIREBUG --><div style="display:none;"><input type="text" id="fake_username_field"/><input type="password" id="fake_password_field"/></div>  <!-- END OF AUTO-COMPLETE HACK --><div class="form-group"><label for="name" class="control-label col-sm-3">Account Name</label><div class="col-sm-9"><input type="text" class="form-control" name="name" id="name" placeholder="This name gets used as part of the hashing process..." autocomplete="off" /></div></div><div class="form-group"><label class="control-label col-sm-3" for="salt">Your Unique Salt</label><div class="col-sm-9"><input type="text" class="form-control" placeholder="Type Salt or Click to Generate New" value="'+salt+'" name="salt" id="salt" autocomplete="off" />'+salt_button+'</div></div><div class="form-group"><label class="control-label col-sm-3" for="pass">Password</label><div class="col-sm-9"><input type="password" class="form-control" name="pass" id="pass" placeholder="Add a password for extra hashing strength!" autocomplete="off" /></div></div><div class="form-group"><label class="control-label col-sm-3">&nbsp;</label><div class="col-sm-9"><input type="password" class="form-control" placeholder="Repeat your password to be sure you typed it correctly..." name="password" id="password" autocomplte="off" /></div></div><div class="form-group"><button type="submit" class="btn btn-primary pull-right">Submit</button></div></form>';
         }
         else if(type == 'qr')
         {
@@ -805,6 +813,7 @@
     
     widgets.init = function()
     {
+        bs_widget_init = true;
         widgets.accounts();
         widgets.addresses();
         widgets.donations();
@@ -812,6 +821,7 @@
         widgets.modals();
         widgets.options();
         widgets.payments();
+        widgets.switch();
         widgets.toggles();
     }
     
@@ -820,6 +830,12 @@
         $('body').on('hide.bs.modal', '.modal', function()
         {
             $('.loading').removeClass('loading');
+        });
+        $('body').on('click', '.bs-qr', function(e)
+        {
+            e.preventDefault();
+            var content = $(this).attr('data-content');
+            $.fn.blockstrap.widgets.qr(false, content, true);
         });
     }
     
@@ -880,9 +896,17 @@
         }
     }
     
-    widgets.qr = function(obj, content)
+    widgets.qr = function(obj, content, modal)
     {
-        if(obj && contnt)
+        var need_modal = false;
+        if(typeof modal != 'undefined' && modal)
+        {
+            need_modal = true;
+            var title = 'QR Code<br /><small>( <a href="'+content+'" target="_blank">'+content+'</a> )</small>';
+            var contents = '<div class="qr-wrapper" data-content="'+content+'" />';
+            $.fn.blockstrap.core.modal(title, contents);
+        }
+        if(obj && contnt && !need_modal)
         {
             if($(obj).find('img').length > 0)
             {
@@ -1109,6 +1133,31 @@
         }
     }
     
+    widgets.switch = function()
+    {
+        $('body').on('submit', 'form.bs-update-api', function(e)
+        {
+            e.preventDefault();
+            var form = $(this);
+            var api = $(form).find('#api-provider').val();
+            var key = $(form).find('#api-key').val();
+            if(api)
+            {
+                $.fn.blockstrap.settings.default_api = api;
+                if(
+                    key
+                    && typeof $.fn.blockstrap.settings.apis.defaults[api] != 'undefined'
+                ){
+                    $.fn.blockstrap.settings.apis.defaults[api].key = key;
+                }
+            }
+            if(key)
+            {
+                $.fn.blockstrap.settings.default_key = key;
+            }
+        });
+    }
+    
     widgets.toggles = function()
     {
         $('body').on('click', '.bs-toggle', function(e)
@@ -1154,6 +1203,7 @@
             {
                 var now = new Date().getTime();
                 var current_balance = account.balance;
+                var current_received = account.received;
                 var current_tx_count = account.tx_count;
                 $.fn.blockstrap.api.address(account.address, account.code, function(results)
                 {
@@ -1170,6 +1220,7 @@
                     ){
                         account.balance = results.balance;
                         account.tx_count = results.tx_count;
+                        this_account.blockchains[account.code].received = results.received;
                         account.ts = now;
                         $.fn.blockstrap.api.transactions(
                             account.address, 
@@ -1215,6 +1266,7 @@
                                     var wrapper = $('#wrapper-'+id);
                                     $(wrapper).find('.bs-balance').text(parseFloat(updated_account.blockchains[chain].balance / 100000000).toFixed(8));
                                     $(wrapper).find('.bs-txs').text(updated_account.blockchains[chain].tx_count);
+                                    $(wrapper).find('.bs-received').text(parseFloat(updated_account.blockchains[chain].received / 100000000).toFixed(8));
                                     if(callback) callback(updated_account);
                                     else return updated_account;
                                 });

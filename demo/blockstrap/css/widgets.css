@@ -37,6 +37,15 @@ span.badge strong {
 
 /*
 
+MODALS
+
+*/
+.modal .modal-title {
+    word-wrap: break-word;
+}
+
+/*
+
 ALERT
 
 */

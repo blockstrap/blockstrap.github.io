@@ -145,6 +145,10 @@ var blockstrap_core = function()
             api: function(default_service)
             {
                 api = 'blockstrap';
+                if(typeof $.fn.blockstrap.settings.default_api != 'undefined')
+                {
+                    api = $.fn.blockstrap.settings.default_api;
+                }
                 if(typeof default_service != 'undefined') api = default_service;
                 if(
                     typeof $.fn.blockstrap.api != 'undefined'
@@ -173,10 +177,10 @@ var blockstrap_core = function()
                     api = api_provider;
                 }
                 if(
-                    typeof $.fn.blockstrap.settings.apis.defaults[api] != 'undefined'
-                    && typeof $.fn.blockstrap.settings.apis.defaults[api][property] != 'undefined'
+                    typeof $.fn.blockstrap.settings.keys.apis[api] != 'undefined'
+                    && typeof $.fn.blockstrap.settings.keys.apis[api][property] != 'undefined'
                 ){
-                    result = $.fn.blockstrap.settings.apis.defaults[api][property];
+                    result = $.fn.blockstrap.settings.keys.apis[api][property];
                 }
                 return result;
             },
@@ -1224,6 +1228,7 @@ var blockstrap_core = function()
             },
             modal: function(title, content, id, callback)
             {
+                var perform_callback = true;
                 var selector = $('#default-modal');
                 if(id) selector = $('#'+id);
                 if(title) $(selector).find('.modal-title').html(title);
@@ -1231,7 +1236,11 @@ var blockstrap_core = function()
                 $(selector).on('show.bs.modal', function()
                 {
                     $(selector).find('input[type="password"]').val('');
-                    if(callback) callback();
+                    if(callback) 
+                    {
+                        perform_callback = false;
+                        callback();
+                    }
                 });
                 $(selector).on('shown.bs.modal', function()
                 {
@@ -1241,6 +1250,10 @@ var blockstrap_core = function()
                 {
                     $(selector).modal('show');
                 }
+                if(typeof callback != 'undefined' && callback && perform_callback)
+                {
+                    callback();
+                }
             },
             modals: function(action)
             {
@@ -1248,7 +1261,9 @@ var blockstrap_core = function()
                 {
                     if(action === 'close_all')
                     {
-                        $($.fn.blockstrap.element).find('.modal').each(function(i)
+                        var space = $.fn.blockstrap.element;
+                        if(!space ||space.length < 1) space = 'body';
+                        $(space).find('.modal').each(function(i)
                         {
                             $(this).modal('hide');
                         });
@@ -3060,8 +3075,8 @@ var blockstrap_functions = {
     }
 };
 var blockstrap_js_scripts;
-window.onload = function()
+document.addEventListener('DOMContentLoaded', function()
 {
     //blockstrap_functions.initialize();
-}
+});
 blockstrap_functions.initialize();

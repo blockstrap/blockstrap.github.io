@@ -53,14 +53,15 @@
             <h3 class="tagline">KEY GENERATION</h3>
             <p class="description">(click button below to open a key-generator)</p>
             <hr />
-            <a href="#" class="btn btn-primary btn-bs-widget bs-generate" target="_blank"
+            <script src="blockstrap/js/widget.js"
             
-               data-chain="btc"
-               data-salt="unique-bs-widget-salt-001"
+                data-type="btn-generate"
+                data-chain="btc"
+                data-salt="unique-bs-widget-salt-001"
             
-            >GENERATE KEYS</a>
+            >GENERATE KEYS</script>
             <hr />
-            <p>Simply add the <code>bs-generate</code> class to any element on pages with the blockstrap <code>widgets</code> module activated</p>
+            <p>Simply add the <code>bs-generate</code> class to any element on pages with the blockstrap <code><a href="#">widgets</a></code> module activated</p>
             <hr />
             <a href="#" class="btn btn-default btn-block" target="_blank">READ DOCUMENTATION</a>
             <hr />
@@ -82,14 +83,16 @@
             <h3 class="tagline">DONATIONS</h3>
             <p class="description">(click button to open a donation window)</p>
             <hr />
-            <a href="#" class="btn btn-primary btn-bs-widget bs-donate" target="_blank"
+            <script src="blockstrap/js/widget.js"
             
+                data-type="btn-donate"
                 data-chain="btc"
                 data-address="1GjHvbkCyYpy3uaNPvHsxe2EptH2RxEvMt"
             
-            >DEFAULT DONATE</a>
-            <a href="#" class="btn btn-primary btn-bs-widget bs-donate" target="_blank"
-            
+            >DEFAULT DONATE</script> 
+            <script src="blockstrap/js/widget.js"
+                    
+                data-type="btn-donate"
                 data-chain="doge"
                 data-address="DEHfgFYKL97gFFoYHM7UejXBGKjLFzD4za"
                
@@ -101,20 +104,23 @@
                 data-amount="123" 
                 data-label="Donation via Blockstrap Widget" 
                 data-loading="Fetching"
-                data-html="<p><a href='#' class='btn btn-default btn-bs-widget bs-qr' data-content='DEHfgFYKL97gFFoYHM7UejXBGKjLFzD4za'>PAYMENT REQUEST QR</a> <a href='#' class='btn btn-primary btn-bs-widget bs-qr' data-content='DEHfgFYKL97gFFoYHM7UejXBGKjLFzD4za'>ADDRESS QR</a> <a href='#' class='btn btn-default btn-bs-widget bs-qr' data-content='DEHfgFYKL97gFFoYHM7UejXBGKjLFzD4za'>PAYMENT REQUEST URL</a></p><p>(and thank you for your very specific donation)</p>"
+                data-html="<p><a href='#' class='btn btn-default btn-bs-widget bs-qr' data-content='dogecoin:DEHfgFYKL97gFFoYHM7UejXBGKjLFzD4za?amount=123.00000000'>PAYMENT REQUEST QR</a> <a href='#' class='btn btn-primary btn-bs-widget bs-qr' data-content='DEHfgFYKL97gFFoYHM7UejXBGKjLFzD4za'>ADDRESS QR</a> <a href='dogecoin:DEHfgFYKL97gFFoYHM7UejXBGKjLFzD4za?amount=123.00000000' target='_blank' class='btn btn-default btn-bs-widget'>PAYMENT REQUEST URL</a></p><p>(and thank you for your very specific donation)</p>"
             
-            >CUSTOM DONATE</a>
+            >CUSTOM DONATE</script>
             <hr />
-            <span class="badge bs">
-                Current Balance: <strong class="donate-balance-DEHfgFYKL97gFFoYHM7UejXBGKjLFzD4za">0.00000000</strong> 
-                | 
-                Total Donations: <strong class="donate-txs-DEHfgFYKL97gFFoYHM7UejXBGKjLFzD4za">0</strong><br /> 
-                Total Received to Date: <strong class="donate-received-DEHfgFYKL97gFFoYHM7UejXBGKjLFzD4za">0</strong>
-            </span>
-            <hr />
-            <p>Simply add the <code>bs-donate</code> class to any element on pages with the blockstrap <code>widgets</code> module activated</p>
+            <p>Simply add the <code>bs-donate</code> class to any element on pages with the blockstrap <code><a href="#">widgets</a></code> module activated</p>
             <hr />
             <a href="#" class="btn btn-default btn-block" target="_blank">READ DOCUMENTATION</a>
+            <hr />
+            <span class="alert alert-info alert-block">
+                <p style="line-height: 40px"><strong>Optional Inegrated Dynamic Labels:</strong></p>
+                <span class="badge bs">
+                    Current Balance: <strong class="donate-balance-DEHfgFYKL97gFFoYHM7UejXBGKjLFzD4za">0.00000000</strong> 
+                    | 
+                    Total Donations: <strong class="donate-txs-DEHfgFYKL97gFFoYHM7UejXBGKjLFzD4za">0</strong><br /> 
+                    Total Received to Date: <strong class="donate-received-DEHfgFYKL97gFFoYHM7UejXBGKjLFzD4za">0</strong>
+                </span>
+            </span>
             <hr />
             <p class="description">Or embed by copy and pasting the following <strong>default</strong> code directly into the HTML where you would like the button to appear for it to be automatically generated</p>
             <hr />
@@ -134,9 +140,14 @@
             <h3 class="tagline">ACCOUNTS</h3>
             <p class="description">(click button to open accounts window)</p>
             <hr />
-            <a href="#" class="btn btn-primary btn-bs-widget bs-accounts-modal" target="_blank">CHECK ACCOUNTS</a>
+            <script src="blockstrap/js/widget.js"
+            
+                data-type="btn-accounts_modal"
+                data-salt="unique-bs-widget-salt-001"
+            
+            >CHECK ACCOUNTS</script>
             <hr />
-            <p>Simply add the <code>bs-accounts</code> class to any element on pages with the blockstrap <code>widgets</code> module activated</p>
+            <p>Simply add the <code>bs-accounts</code> class to any element on pages with the blockstrap <code><a href="#">widgets</a></code> module activated</p>
             <hr />
             <a href="#" class="btn btn-default btn-block" target="_blank">READ DOCUMENTATION</a>
             <hr />
@@ -147,6 +158,7 @@
 
   src="/blockstrap/js/widget.js" 
   data-type="btn-accounts_modal"
+  data-salt="ADD_SALT_HERE"
     
 &gt;&lt;/script&gt;
 </pre></p>
@@ -159,21 +171,31 @@
     <p>&nbsp;</p>
     <p>&nbsp;</p>
 
+    <span class="alert alert-block alert-warning">
+        <strong>UPDATING API CONFIGURATION AND SWITCHING WIDGET OPTIONS</strong>
+    </span>
     <span class="alert alert-block alert-info">
-        <strong>Updating API Selection</strong>
-        <br />
-        (select from the available APIs below and add an API key if required)
+        select from the <strong>nine available</strong> API providers below and add an API key if, when or where required
         <hr />
         <form class="bs-update-api">
             <div class="row">
                 <div class="col-sm-4">
-                    <select class="form-control" id="api-provider">
+                    <select class="form-control" id="api-provider" autocomplete="off">
                         <option value="">-- Select API Provider --</option>
+                        <option value="bcinfo">Blockchain.info (1 Chain)</option>
+                        <option value="blockcypher">BlockCypher (3 Chains)</option>
+                        <option value="blockr">BlockR (4 Chains)</option>
+                        <option value="blocktrail">BlockTrail (2 Chains)</option>
+                        <option value="insights">Insights (2 Chains)</option>
+                        <option value="qt">Local QTs (8 Chains)</option>
+                        <option value="sochain">SoChain (6 Chains)</option>
+                        <option value="spinal">Spinal (10 Chains)</option>
+                        <option value="toshi">Toshi (2 Chains)</option>
                     </select>
                     <hr />
                 </div>
                 <div class="col-sm-5">
-                    <input type="text" class="form-control" placeholder="Add Optional API Key" id="api=key" />    
+                    <input type="text" class="form-control" placeholder="Add Optional API Key" id="api-key" autocomplete="off" />    
                     <hr />
                 </div>
                 <div class="col-sm-3">
@@ -182,7 +204,7 @@
                 </div>
             </div>
         </form>
-        (otherwise the <code>default_api</code> and <code>default_key</code> from the merged blockstrap options will be used)
+        otherwise the <code>default_api</code> and <code>default_key</code> from the merged blockstrap options will be used
     </span>
     
 </div>  
@@ -223,32 +245,6 @@
         </div>
     </div>
 </div>
-    
-<!-- INCLUDE REQUIRED DEPENDENCIES MANUALLY -->
-<script src="blockstrap/js/dependencies/jquery.min.js"></script>
-<script src="blockstrap/js/dependencies/bootstrap.min.js"></script>
-<script src="blockstrap/js/dependencies/crypto.js"></script>
-<script src="blockstrap/js/dependencies/sha3.js"></script>
-<script src="blockstrap/js/dependencies/bitcoinjs-lib.js"></script>
-<script src="blockstrap/js/dependencies/qrcode.js"></script>
-<script src="blockstrap/js/dependencies/mustache.js"></script>
-    
-<!-- INCLUDE BS FRAMEWORK -->
-<script src="options.js"></script>
-<script src="blockstrap/js/widget.options.js"></script>
-<script src="blockstrap/js/blockstrap.js"></script>
-<!-- PLEASE NOTE YOU CAN NOW SET INSTALL TO FALSE IN OPTIONS -->
-    
-<!-- INCLUDE REQUIRED MODULES MANUALLY -->
-<script src="blockstrap/js/modules/api.js"></script>
-<script src="blockstrap/js/modules/accounts.js"></script>
-<script src="blockstrap/js/modules/data.js"></script>
-<script src="blockstrap/js/modules/html.js"></script>
-<script src="blockstrap/js/modules/blockchains.js"></script>
-<script src="blockstrap/js/modules/widgets.js"></script>
-    
-<!-- ONE FILE TO EVENTUALLY REPLACE THEM ALL -->
-<script src="blockstrap/js/widget.js"></script>
 
 </body>
 </html>

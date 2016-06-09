@@ -374,6 +374,32 @@ var blockstrap_options = {
             op_limit: 80
         }
     },
+    keys: {
+        apis: {
+            blockcypher: {
+                key_name: "token",
+                key: [
+                    "ff45f11f32b3538cb48f2d58856d7632", 
+                    "ef19566f325e0cc034f78b1201071378", 
+                    "e7bd9bc90349874a906541a76f6fd7d0", 
+                    "0454bc05b54193da55544410e57737aa", 
+                    "45d55bcc3f0b80d9d9c09cf7e110fd21", 
+                    "991278394ed35e232823609aa1e1aed8", 
+                    "d2d5bff9f0301249c7dd6a88db107a52", 
+                    "c1d3af601a8cbac0680486d58b5e7fce", 
+                    "33766acc25e8ab1bdf2eb23ea8452dfd"
+                ]
+            },
+            blocktrail: {
+                key_name: "api_key",
+                key: "f702ea49bf98445fbeb3fc584ee752d8bf8ddd3e"
+            },
+            blockstrap: {
+                key_name: "api_key",
+                key: "B726962B-F976-6FD9-67EA-71C9838FD6A7"
+            }
+        }
+    },
     apis: {
         available: {
             blockstrap: "Blockstrap",
@@ -385,22 +411,10 @@ var blockstrap_options = {
         defaults: {
             blockcypher: {
                 async: false,
-                key: [
-                    "795ad87531fff07a175e314ae9d6397c", 
-                    "ff45f11f32b3538cb48f2d58856d7632", 
-                    "ef19566f325e0cc034f78b1201071378", 
-                    "e7bd9bc90349874a906541a76f6fd7d0", 
-                    "0454bc05b54193da55544410e57737aa", 
-                    "45d55bcc3f0b80d9d9c09cf7e110fd21", 
-                    "991278394ed35e232823609aa1e1aed8", 
-                    "d2d5bff9f0301249c7dd6a88db107a52", 
-                    "c1d3af601a8cbac0680486d58b5e7fce", 
-                    "33766acc25e8ab1bdf2eb23ea8452dfd"
-                ],
-                key_name: "token",
                 functions: {
                     to: {
                         address: "addrs/$call/full",
+                        addresses: "addrs/$call/full",
                         block: "blocks/",
                         op_returns: "addrs/$call/full",
                         relay: "txs/push/",
@@ -412,6 +426,14 @@ var blockstrap_options = {
                     },
                     from: {
                         address: {
+                            key: "",
+                            address: "address",
+                            hash: "",
+                            tx_count: "final_n_tx",
+                            received: "total_received",
+                            balance: "final_balance"
+                        },
+                        addresses: {
                             key: "",
                             address: "address",
                             hash: "",
@@ -479,8 +501,6 @@ var blockstrap_options = {
             },
             blocktrail: {
                 async: false,
-                key: 'f702ea49bf98445fbeb3fc584ee752d8bf8ddd3e',
-                key_name: 'api_key',
                 functions: {
                     to: {
                         address: "address/$call",
@@ -556,8 +576,6 @@ var blockstrap_options = {
             blockstrap: {
                 async: true,
                 paginate: true,
-                key: "B726962B-F976-6FD9-67EA-71C9838FD6A7",
-                key_name: "api_key",
                 functions: {
                     to: {
                         address: "address/transactions/",
