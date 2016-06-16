@@ -2,6 +2,7 @@ nbproject/
 git/
 
 secret.json
+rpc_options.php
 
 *.swp
 *.log
