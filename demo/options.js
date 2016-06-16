@@ -17,7 +17,6 @@ var blockstrap_options = {
     app_id: "framework",
     loader_id: "blockstrap",
     account_poll: true,
-    skip_config: true,
     install: false,
     public: false, 
     security: false,
@@ -446,6 +445,7 @@ var blockstrap_options = {
                             height: "height",
                             hash: "hash",
                             prev: "prev_block",
+                            next: "",
                             next: "",
                             tx_count: "n_tx",
                             time: "[time, utctoepoch]"
