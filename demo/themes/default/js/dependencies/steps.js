@@ -337,10 +337,6 @@ var blockstrap_setup_steps = [
                                         ],
                                         "values": [
                                             {
-                                                "value": "blockstrap",
-                                                "text": "Blockstrap"
-                                            },
-                                            {
                                                 "value": "blockcypher",
                                                 "text": "BlockCypher"
                                             },
