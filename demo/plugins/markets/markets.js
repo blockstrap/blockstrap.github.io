@@ -28,34 +28,34 @@
     // IF API BEING USED DOES NOT SUPPORT MARKET API
     // THESE VALUES WILL NOT BE UPDATED UNLESS API SUPPORTS
     var conditions = {
-        "ts": 0,
+        "ts": -1,
         "price_usd_now" : {
             text: "BTC to USD",
             prefix: "US$",
-            value: 0
+            value: 1265
         },
         "tx_count_24hr": {
             text: "Daily TXs",
-            value: 0
+            value: 233124
         },
         "sent_usd_24hr": {
             text: "Daily US$ Sent",
-            affix: "Billion",
-            value: 0
+            affix: "Million",
+            value: 35653605
         },
         "sent_coins_24hr": {
             text: "Daily BTC Sent",
-            value: 0
+            value: 28176
         },
         "coins_discovered": {
             text: "BTC Discovered",
             affix: "Million",
-            value: 0
+            value: 16292013
         },
         "marketcap": {
             text: "Market Cap US$",
             affix: "Billion",
-            value: 0
+            value: 21880172788
         }
     };
     
@@ -345,23 +345,39 @@
     }
     
     markets.updates = function(variables, callback, force_refresh)
-    {    
-        $.fn.blockstrap.plugins.markets.rates(function(response)
+    {   
+        if(typeof conditions.ts != 'undefined' && conditions.ts < 0)
         {
-            if(
-                typeof response.usd != 'undefined'
-                && typeof response.usd.btc != 'undefined'
-            ){
-                $.fn.blockstrap.plugins.markets.conditions(response, function(response)
+            var now = (new Date().getTime()) / 1000;
+            conditions.ts = now;
+            var total = conditions.coins_discovered.value * 100000000;
+            var btc = conditions.sent_coins_24hr.value * 100000000;
+            conditions.sent_coins_24hr.value = btc / 100000000;
+            conditions.sent_usd_24hr.value = parseFloat(conditions.sent_usd_24hr.value / 1000000).toFixed(1);
+            conditions.coins_discovered.value = parseFloat((total / 100000000) / 1000000).toFixed(1);
+            conditions.marketcap.value = parseFloat((parseFloat((total / 100000000) * conditions.price_usd_now.value).toFixed(2)) / 1000000000).toFixed(1);
+            localStorage.setItem('nw_market_conditions', JSON.stringify(conditions));
+            if(callback) callback();   
+        }
+        else
+        {
+            $.fn.blockstrap.plugins.markets.rates(function(response)
+            {
+                if(
+                    typeof response.usd != 'undefined'
+                    && typeof response.usd.btc != 'undefined'
+                ){
+                    $.fn.blockstrap.plugins.markets.conditions(response, function(response)
+                    {
+                        if(callback) callback();
+                    }, force_refresh);
+                }
+                else
                 {
                     if(callback) callback();
-                }, force_refresh);
-            }
-            else
-            {
-                if(callback) callback();
-            }
-        }, force_refresh);
+                }
+            }, force_refresh);
+        }
     }
     
     // MERGE THE NEW FUNCTIONS WITH CORE

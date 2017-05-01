@@ -183,6 +183,14 @@ var blockstrap_core = function()
                 ){
                     result = $.fn.blockstrap.settings.keys.apis[api][property];
                 }
+                else if(
+                    typeof $.fn.blockstrap.settings.keys != 'undefined'
+                    && typeof $.fn.blockstrap.settings.apis != 'undefined'
+                    && typeof $.fn.blockstrap.settings.apis.defaults[api] != 'undefined'
+                    && typeof $.fn.blockstrap.settings.apis.defaults[api][property] != 'undefined'
+                ){
+                    result = $.fn.blockstrap.settings.apis.defaults[api][property];
+                }
                 return result;
             },
             apply_actions: function(hook, callback, options)
@@ -340,6 +348,7 @@ var blockstrap_core = function()
             },
             css: function(callback, files)
             {
+                var skin = false;
                 var bs = $.fn.blockstrap;
                 var $bs = blockstrap_functions;
                 var theme = $.fn.blockstrap.settings.theme;
@@ -353,14 +362,13 @@ var blockstrap_core = function()
                     var file_len = Object.keys(css_files).length;
                     $.each(css_files, function(k, v)
                     {
-                        var called = false;
-                        
+                        var called = false;   
                         var css = localStorage.getItem('nw_inc_css_'+v);
                         if(blockstrap_functions.json(css)) css = $.parseJSON(css);
                         var refresh = blockstrap_functions.vars('refresh');
                         var cache = bs.settings.cache;
                         var store = true;
-                        if(cache.css === false) store = false;
+                        if(typeof cache != 'undefined' && cache.css === false) store = false;
                         if(!css || refresh === true || store === false) 
                         {
                             // FETCH CSS?
@@ -416,7 +424,13 @@ var blockstrap_core = function()
                                 }
                             }
                         }
-                    })
+                    });
+                    if(typeof $.fn.blockstrap.settings.skin != 'undefined' && $.fn.blockstrap.settings.skin)
+                    {
+                        skin = $.fn.blockstrap.settings.skin;
+                        var skin_url = $.fn.blockstrap.settings.theme_base + theme + '/skins/' + skin + '/css/styles.css';
+                        blockstrap_functions.get_css(skin_url, true, skin);
+                    }
                 }
                 else
                 {
@@ -1398,13 +1412,19 @@ var blockstrap_core = function()
                 {
                     var plugin = plugins[index];
                     var plugin_url = 'plugins/' + plugin + '/' + plugin + '.js';
+                    
+                    if(plugin.indexOf('plugins/') > -1)
+                    {
+                        plugin_url = plugin + '.js';
+                    }
+                    
                     // Need to cache plugin?
                     var plug = localStorage.getItem('nw_inc_plugin_'+plugin);
                     if(blockstrap_functions.json(plug)) plug = $.parseJSON(plug);
                     var refresh = blockstrap_functions.vars('refresh');
                     var cache = bs.settings.cache;
                     var store = true;
-                    if(cache.plugins === false) store = false;
+                    if(typeof cache != 'undefined' && cache.plugins === false) store = false;
                     if(!plug || refresh === true || store === false) 
                     {
                         $.getScript(plugin_url, function(plugin_js)
@@ -2364,18 +2384,57 @@ var blockstrap_core = function()
                                         var modules = $.fn.blockstrap.settings.modules;
                                         var bootstrap = $.fn.blockstrap.settings.bootstrap;
                                         var plugins = $.fn.blockstrap.settings.plugins;
-
+                                        
                                         if($.fn.blockstrap.settings.install === false)
                                         {
                                             dependencies = false;
                                             modules = false;
                                             plugins = false;
                                         }
+                                        
+                                        if(plugins)
+                                        {
+                                            $.each(plugins, function(k, plugin)
+                                            {
+                                                var plugin_key = plugin;
+                                                var plugin_url = '../../../../plugins/' + plugin + '/';
+                                                if(plugin.indexOf('plugins/') > -1)
+                                                {
+                                                    var plugin_array = plugin.split('/');
+                                                    plugin_key = plugin_array[plugin_array.length -1];
+                                                    plugin = plugin.substring(0, (plugin.length - (plugin_key.length + 1)));
+                                                    plugin_url = '../../../../../plugins/' + plugin + '/';
+                                                }
+                                                if(
+                                                    typeof $.fn.blockstrap.settings.plugin != 'undefined'
+                                                    && typeof $.fn.blockstrap.settings.plugin.dependencies != 'undefined'
+                                                    && typeof $.fn.blockstrap.settings.plugin.dependencies[plugin_key] != 'undefined'
+                                                    && $.isArray($.fn.blockstrap.settings.plugin.dependencies[plugin_key])
+                                                ){
+                                                    var plugin_dependencies = $.fn.blockstrap.settings.plugin.dependencies[plugin_key];
+                                                    $.each(plugin_dependencies, function(pk, dependency)
+                                                    {
+                                                        if(modules && $.isArray(modules))
+                                                        {
+                                                            dependencies.push(plugin_url + 'js/dependencies/' + dependency);
+                                                        }
+                                                    });
+                                                }
+                                            });
+                                        }
+                                        
+                                        if($.fn.blockstrap.settings.vars)
+                                        {
+                                            var vars = $.fn.blockstrap.settings.vars;
+                                            if(typeof vars.skin != 'undefined' && vars.skin)
+                                            {
+                                                $.fn.blockstrap.settings.skin = vars.skin;
+                                            }
+                                        }
 
                                         // UPDATE CORE IF REQUIRED
                                         $bs.update(bs.settings.v, function(saved_version, this_version, refresh)
                                         {
-
                                             // USE LESS.css ...?
                                             bs.core.less(function()
                                             {
@@ -2394,6 +2453,26 @@ var blockstrap_core = function()
                                                                 $('.bs.installing').attr('data-loading-content','Now Installing 1 of  '+$bs.array_length(modules)+' Modules');
                                                                 $bs.include(bs, 0, modules, function()
                                                                 {
+                                                                    if($.fn.blockstrap.settings.vars)
+                                                                    {
+                                                                        var vars = $.fn.blockstrap.settings.vars;
+                                                                        if(typeof vars.skin != 'undefined' && vars.skin)
+                                                                        {
+                                                                            $.fn.blockstrap.settings.skin = vars.skin;
+                                                                            var theme = $.fn.blockstrap.settings.theme;
+                                                                            var theme_base = $.fn.blockstrap.settings.theme_base;
+                                                                            var language = theme_base + theme + '/skins/' + vars.skin + '/js/languages';
+                                                                            var skin_plugin = theme_base + theme + '/skins/' + vars.skin + '/js/' + vars.skin;
+                                                                            $.getScript(language + '.js', function(js)
+                                                                            {
+
+                                                                            });
+                                                                            $.getScript(skin_plugin + '.js', function(js)
+                                                                            {
+
+                                                                            });
+                                                                        }
+                                                                    }
                                                                     $.fn.blockstrap.snippets = {}; 
                                                                     if($.isArray(bootstrap))
                                                                     {
@@ -2458,6 +2537,26 @@ var blockstrap_core = function()
                                                         {
                                                             // INCLUDE JS MODULES
                                                             $('.bs.installing').attr('data-loading-content','Now Installing 1 of  '+$bs.array_length(modules)+' Modules');
+                                                            if($.fn.blockstrap.settings.vars)
+                                                            {
+                                                                var vars = $.fn.blockstrap.settings.vars;
+                                                                if(typeof vars.skin != 'undefined' && vars.skin)
+                                                                {
+                                                                    $.fn.blockstrap.settings.skin = vars.skin;
+                                                                    var theme = $.fn.blockstrap.settings.theme;
+                                                                    var theme_base = $.fn.blockstrap.settings.theme_base;
+                                                                    var language = theme_base + theme + '/skins/' + vars.skin + '/js/languages';
+                                                                    var skin_plugin = theme_base + theme + '/skins/' + vars.skin + '/js/' + vars.skin;
+                                                                    $.getScript(language + '.js', function(js)
+                                                                    {
+
+                                                                    });
+                                                                    $.getScript(skin_plugin + '.js', function(js)
+                                                                    {
+
+                                                                    });
+                                                                }
+                                                            }
                                                             $bs.include(bs, 0, modules, function()
                                                             {
                                                                 $.fn.blockstrap.snippets = {};
@@ -2762,7 +2861,6 @@ var blockstrap_functions = {
         if(dependency) include_type = 'Dependencies';
         
         $('.bs.installing').attr('data-loading-content','Now Installing ' + (start + 1) + ' of  '+blockstrap_functions.array_length(files)+' ' + include_type);
-        
         if(install === false)
         {
             callback();
@@ -2776,11 +2874,11 @@ var blockstrap_functions = {
             if(blockstrap_functions.json(js_file)) js_file = $.parseJSON(js_file);
             if(!dependency)
             {
-                if(cache.modules === false) store = false;
+                if(typeof cache != 'undefined' && cache.modules === false) store = false;
             }
             else
             {
-                if(cache.dependencies === false) store = false;
+                if(typeof cache != 'undefined' && cache.dependencies === false) store = false;
             }
             if(blockstrap.settings.cascade === false)
             {
@@ -2863,7 +2961,7 @@ var blockstrap_functions = {
                     }).fail(function(jqxhr, settings, exception)
                     {
                         start++;
-                        if(store === true)
+                        if(store === true && file_name != 'bitcoinjs-lib')
                         {
                             localStorage.setItem('nw_js_'+file_name, js);
                         }   
@@ -2883,7 +2981,7 @@ var blockstrap_functions = {
                             js+= "\n" + theme_js;
                         }
 
-                        if(store === true)
+                        if(store === true && file_name != 'bitcoinjs-lib')
                         {
                             localStorage.setItem('nw_js_'+file_name, js);
                         }
@@ -2893,7 +2991,7 @@ var blockstrap_functions = {
                     }).fail(function(jqxhr, settings, exception)
                     {
                         start++;
-                        if(store === true)
+                        if(store === true && file_name != 'bitcoinjs-lib')
                         {
                             localStorage.setItem('nw_js_'+file_name, js);
                         }

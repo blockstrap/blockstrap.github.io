@@ -25,7 +25,7 @@ var blockstrap_options = {
     element: "body",
     less: false,
     test: false,
-    refresh: true, // this is not working?!?
+    refresh: true,
     cascade: true,
     html_base: "html/",
     data_base: "data/",
@@ -73,10 +73,13 @@ var blockstrap_options = {
             "verify",
             "switch",
             "new_chain",
+            "new_contract",
             "see_all",
             "check_inactive",
             "check_all_inactive",
-            "add_contact_address"
+            "add_contact_address",
+            "contract_send",
+            "contract_remove"
         ],
         ids: [
             "create-account",
@@ -245,22 +248,6 @@ var blockstrap_options = {
             }
         }
     },
-    cache: {
-        api: {
-            timeout: 60000,
-            markets: 60000
-        },
-        accounts: 60000,
-        dependencies: true,
-        modules: true,
-        less: true,
-        bootstrap: true,
-        plugins: true,
-        css: true,
-        config: true,
-        json: true,
-        html: true
-    },
     styles: {
         vars: {
             content_bg: "#DDD",
@@ -303,9 +290,8 @@ var blockstrap_options = {
             blockchain: "Dogecoin (Testnet)",
             lib: "dogecointestnet",
             apis: {
-                blockstrap: "http://192.168.1.200/v0/doget/",
                 blockstrap: "http://officeapi.neuroware.io/v0/doget/",
-                qt: "proxies/rpc.php?blockchain=doget"
+                spinal: "http://spinal.neuroware.io/v1/doget/",
             },
             fee: 2,
             op_return: true,
@@ -324,7 +310,6 @@ var blockstrap_options = {
         multi: {
             private: true,
             apis: {
-                blockstrap: "http://192.168.1.200/v0/multi/",
                 blockstrap: "http://officeapi.neuroware.io/v0/multi/"
             }
         },
@@ -334,7 +319,7 @@ var blockstrap_options = {
             apis: {
                 blockcypher: "http://api.blockcypher.com/v1/btc/main/",
                 blocktrail: "https://api.blocktrail.com/v1/btc/",
-                qt: "proxies/rpc.php?blockchain=btc",
+                spinal: "http://spinal.neuroware.io/v1/btc/",
                 toshi: "https://bitcoin.toshi.io/api/v0/"
             },
             fee: 0.0001,
@@ -356,7 +341,8 @@ var blockstrap_options = {
             lib: "dogecoin",
             apis: {
                 blockcypher: "http://api.blockcypher.com/v1/doge/main/",
-                qt: "proxies/rpc.php?blockchain=doge"
+                qt: "proxies/rpc.php?blockchain=doge",
+                spinal: "https://api.neuroware.io/v2/doge/"
             },
             fee: 1,
             op_return: true,
@@ -379,6 +365,7 @@ var blockstrap_options = {
             blockcypher: "BlockCypher",
             blocktrail: "BlockTrail",
             qt: "Local QTs",
+            spinal: "Spinal",
             toshi: "Toshi"
         },
         defaults: {
@@ -741,6 +728,79 @@ var blockstrap_options = {
                     }
                 }
             },
+            spinal: {
+                async: false,
+                key: [],
+                key_name: "",
+                functions: {
+                    to: {
+                        address: 'addr/$call/1/txfull',
+                        dnkeys: 'dnkey/',
+                        op_returns: "addr/$call/1/txfull",
+                        relay: "tx/relay/",
+                        relay_param: "tx",
+                        relay_json: "tx",
+                        transaction: "tx/$call/verbose",
+                        transactions: "addr/$call/1/txfull",
+                        unspents: "addr/$call/1/unspent"
+                    },
+                    from: {
+                        address: {
+                            key: "",
+                            address: "address",
+                            hash: "address_hash160",
+                            tx_count: "transaction_count_total",
+                            received: "inputs_value_confirmed",
+                            balance: "[tx_list]"
+                        },
+                        dnkeys: {
+                            key: "",
+                            dnkeys: "dnkeys"
+                        },
+                        op_returns: {
+                            key: "",
+                            inner: "tx_list",
+                            txid: "id",
+                            data: "script_hex"
+                        },
+                        relay: {
+                            key: "",
+                            txid: "tx"
+                        },
+                        transaction: {
+                            key: "",
+                            txid: "id",
+                            size: "N/A",
+                            block: "block_height",
+                            time: "time",
+                            input: "input_value",
+                            output: "output_value",
+                            value: "N/A",
+                            fees: "fees_value"
+                        },
+                        transactions: {
+                            key: "tx_list",
+                            txid: "id",
+                            size: "N/A",
+                            block: "block_height",
+                            time: "time",
+                            input: "input_value",
+                            output: "output_value",
+                            value: "N/A",
+                            fees: "fees_value"
+                        },
+                        unspents: {
+                            key: "",
+                            inner: "uxto_list",
+                            confirmations: "",
+                            txid: "tx_hash",
+                            index: "pos",
+                            value: "value",
+                            script: "script_hex"
+                        }
+                    }
+                }
+            },
             toshi: {
                 async: false,
                 key: [],
@@ -826,5 +886,10 @@ var blockstrap_options = {
         }
     }
 };
+
+if(typeof bs_secrets != 'undefined')
+{
+    blockstrap_options.keys = bs_secrets;
+}
     
 var blockstrap_defaults = JSON.stringify(blockstrap_options);
