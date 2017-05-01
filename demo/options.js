@@ -290,7 +290,6 @@ var blockstrap_options = {
             blockchain: "Dogecoin (Testnet)",
             lib: "dogecointestnet",
             apis: {
-                blockstrap: "http://officeapi.neuroware.io/v0/doget/",
                 spinal: "http://spinal.neuroware.io/v1/doget/",
             },
             fee: 2,
@@ -310,7 +309,7 @@ var blockstrap_options = {
         multi: {
             private: true,
             apis: {
-                blockstrap: "http://officeapi.neuroware.io/v0/multi/"
+
             }
         },
         btc: {
@@ -361,7 +360,6 @@ var blockstrap_options = {
     },
     apis: {
         available: {
-            blockstrap: "Blockstrap",
             blockcypher: "BlockCypher",
             blocktrail: "BlockTrail",
             qt: "Local QTs",
@@ -530,113 +528,6 @@ var blockstrap_options = {
                             inner: "../",
                             txid: "hash",
                             data: "script_hex"
-                        }
-                    }
-                }
-            },
-            blockstrap: {
-                async: true,
-                paginate: true,
-                functions: {
-                    to: {
-                        address: "address/transactions/",
-                        addresses: "address/ids/",
-                        block: "block/height/",
-                        dnkey: "dnkey/",
-                        dnkeys: "dnkey/",
-                        market: "market/stats/",
-                        op_returns: "address/transactions/$call?showtxnio=1",
-                        relay: "transaction/relay/",
-                        relay_param: "txn_hex",
-                        transaction: "transaction/id/",
-                        transactions: "address/transactions/$call?showtxnio=1",
-                        tx_pagination: "records, skip",
-                        unspents: "address/unspents/$call?showtxnio=1"
-                    },
-                    from: {
-                        address: {
-                            key: "address",
-                            address: "address",
-                            hash: "address_hash160",
-                            tx_count: "transaction_count_total",
-                            received: "inputs_value_confirmed",
-                            balance: "balance"
-                        },
-                        addresses: {
-                            key: "addresses",
-                            delimiter: ",",
-                            address: "address",
-                            hash: "address_hash160",
-                            tx_count: "transaction_count_total",
-                            received: "inputs_value_confirmed",
-                            balance:"balance"
-                        },
-                        block: {
-                            key: "blocks.0",
-                            height: "height",
-                            hash: "[id, lowercase]",
-                            prev: "[prev_block_id, lowercase]",
-                            next: "[next_block_id, lowercase]",
-                            tx_count: "tx_count",
-                            time: "time"
-                        },
-                        dnkey: {
-                            key: "",
-                            dnkeys: "dnkeys"
-                        },
-                        dnkeys: {
-                            key: "",
-                            dnkeys: "dnkeys"
-                        },
-                        market: {
-                            key: "market",
-                            price_usd_now: "fiat_usd_now",
-                            tx_count_24hr: "tx_count_24hr",
-                            sent_usd_24hr: "[output_value_24hr, *, fiat_usd_now, int]",
-                            sent_coins_24hr: "output_value_24hr",
-                            coins_discovered: "coinbase_value_todate",
-                            marketcap: "marketcap"
-                        },
-                        op_returns: {
-                            key: "address",
-                            inner: "transactions",
-                            txid: "id",
-                            data: "script_pub_key"
-                        },
-                        relay: {
-                            txid: "id",
-                            inner: ""
-                        },
-                        transaction: {
-                            key: "transaction",
-                            txid: "[id, lowercase]",
-                            size: "size",
-                            block: "block_height",
-                            time: "time",
-                            input: "input_value",
-                            output: "output_value",
-                            value: "[output_value, -, fees, int]",
-                            fees: "fees"
-                        },
-                        transactions: {
-                            key: "address.transactions",
-                            txid: "[id, lowercase]",
-                            size: "size",
-                            block: "block_height",
-                            time: "time",
-                            input: "input_value",
-                            output: "output_value",
-                            value: "[outputs, value]",
-                            fees: "fees"
-                        },
-                        unspents: {
-                            key: "address.transactions",
-                            reverse_array: true,
-                            confirmations: "confirmations",
-                            txid: "[id, lowercase]",
-                            index: "tx_address_pos",
-                            value: "tx_address_value",
-                            script: "[tx_address_script_pub_key, lowercase]"
                         }
                     }
                 }
